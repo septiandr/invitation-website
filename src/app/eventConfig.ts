@@ -24,6 +24,14 @@ export type EventConfig = {
     objectPosition?: string;
   }>;
   backgroundAudio?: string;
+  quote: { text: string; source: string };
+  groom: { role: string; roleEn: string; nickname: string; fullName: string; parents: string; bio: string; image: string; instagram: string };
+  bride: { role: string; roleEn: string; nickname: string; fullName: string; parents: string; bio: string; image: string; instagram: string };
+  loveStory: Array<{ year: string; title: string; description: string; image?: string }>;
+  gift: { bankName: string; accountNumber: string; accountName: string };
+  guestQrEnabled: boolean;
+  prewedding: { youtubeEmbedUrl: string; youtubeWatchUrl: string; title: string };
+  livestream: { youtubeWatchUrl: string; schedule: string; scheduleEn: string };
 };
 
 /**
@@ -78,5 +86,46 @@ export const eventConfig: EventConfig = {
     { src: "/assets/9.png", alt: "Joyful landscape moment", objectPosition: "50% 50%" },
     { src: "/assets/10.png", alt: "Feature landscape with elegant composition", objectPosition: "50% 50%" },
   ],
-  backgroundAudio: "https://invitato.net/template-rickyfelly/static/bg-sound-f26b8f4c5518b48f7ff52c53516f2b2b.mp3",
+  backgroundAudio: "/assets/bg-music.mp3",
+  quote: {
+    text: "Together with joyful hearts, we are pleased to announce the beginning of this new chapter of our lives together.",
+    source: "Ricky & Fellycia",
+  },
+  groom: {
+    role: "Mempelai Pria",
+    roleEn: "The Groom",
+    nickname: "Ricky",
+    fullName: "Ricky Pratama",
+    parents: "Putra dari Bapak Hendra Pratama & Ibu Maria Pratama",
+    bio: "Seorang insinyur yang percaya cinta adalah komitmen harian. Melamar Fellycia di bawah langit Jakarta, Desember lalu.",
+    image: "/assets/5.png",
+    instagram: "ricky.pratama",
+  },
+  bride: {
+    role: "Mempelai Wanita",
+    roleEn: "The Bride",
+    nickname: "Fellycia",
+    fullName: "Fellycia Angelina",
+    parents: "Putri dari Bapak Anton Wijaya & Ibu Lina Wijaya",
+    bio: "Desainer yang jatuh cinta pada tawa Ricky sejak 2019. Kini siap menua bersama dalam satu cerita.",
+    image: "/assets/6.png",
+    instagram: "fellycia.angel",
+  },
+  loveStory: [
+    { year: "2019", title: "First Meet", description: "A simple meeting that turned into endless conversations.", image: "/assets/5.png" },
+    { year: "2022", title: "The Promise", description: "Through every season, we chose each other — again and again.", image: "/assets/6.png" },
+    { year: "2026", title: "Forever Begins", description: "With blessing from family, we step into marriage.", image: "/assets/7.png" },
+  ],
+  gift: { bankName: "BCA", accountNumber: "123 456 7890", accountName: "Ricky & Fellycia" },
+  guestQrEnabled: true,
+  prewedding: {
+    youtubeEmbedUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ?rel=0",
+    youtubeWatchUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    title: "Ricky & Fellycia — Pre Wedding Film",
+  },
+  livestream: {
+    youtubeWatchUrl: "https://www.youtube.com/live/xxxxxxxxxxx",
+    schedule: "Minggu, 20 Desember 2026 • 09:00 WIB",
+    scheduleEn: "Sunday, December 20th 2026 • 09:00 WIB",
+  },
 };

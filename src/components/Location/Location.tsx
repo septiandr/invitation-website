@@ -1,11 +1,13 @@
 import { eventConfig } from "../../app/eventConfig";
+import { getLang, t } from "../../lib/i18n";
 export function Location() {
+  const lang = getLang();
   return (
-    <section id="location" style={{ background: "var(--color-paper-alt)" }}>
-      <div className="container section-pad">
+    <section id="location" style={{ background: "#fff" }}>
+      <div className="container section-pad" style={{ maxWidth: 430 }}>
         <div style={{ textAlign: "center", marginBottom: 28 }}>
-          <p className="kicker">Location</p>
-          <h2 className="display" style={{ fontSize: "var(--text-h2)", margin: "8px 0 0", letterSpacing: "0.06em", textTransform: "uppercase" }}>Find Us</h2>
+          <p className="kicker">{t(lang, "Lokasi", "Location")}</p>
+          <h2 className="display" style={{ fontSize: 28, margin: "8px 0 0", letterSpacing: "0.06em", textTransform: "uppercase" }}>{t(lang, "Temukan Kami", "Find Us")}</h2>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 18, alignItems: "start" }}>
           <div style={{ background: "var(--color-paper)", border: "1px solid var(--color-line)", padding: 28, borderRadius: 16 }}>

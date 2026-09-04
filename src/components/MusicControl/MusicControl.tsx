@@ -6,34 +6,49 @@ export function MusicControl({ isOpened }: { isOpened: boolean }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isAvailable, setIsAvailable] = useState(true);
   const [hasInteracted, setHasInteracted] = useState(false);
+  const fallbackTried = useRef(false);
 
-  // auto-play after cover opened (counts as user gesture)
+  const FALLBACK_SRC =
+    "https://invitato.net/template-rickyfelly/static/bg-sound-f26b8f4c5518b48f7ff52c53516f2b2b.mp3";
+
+  // Preload early so bytes are already available when user clicks "Buka Undangan".
+  // NOTE: <audio> must stay mounted BEFORE isOpened so the click handler in App
+  // can call .play() synchronously inside the user gesture (required by iOS Safari).
   useEffect(() => {
-    if (!isOpened) return;
     const a = audioRef.current;
     if (!a) return;
+    a.volume = 0.6;
+    try {
+      a.load();
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
-    const tryPlay = async () => {
-      try {
-        a.volume = 0.6;
-        await a.play();
-        setIsPlaying(true);
-        setHasInteracted(true);
-      } catch {
-        setIsPlaying(false);
-      }
+  // sync state with audio events (attach once audio element exists)
+  useEffect(() => {
+    const a = audioRef.current;
+    if (!a) return;
+    const onPlay = () => {
+      setIsPlaying(true);
+      setHasInteracted(true);
     };
-    const t = setTimeout(tryPlay, 350);
-    return () => clearTimeout(t);
-  }, [isOpened]);
-
-  // sync state with audio events
-  useEffect(() => {
-    const a = audioRef.current;
-    if (!a) return;
-    const onPlay = () => setIsPlaying(true);
     const onPause = () => setIsPlaying(false);
     const onError = () => {
+      const err = a.error;
+      console.warn("[music] audio error:", err?.code, err?.message, "src=", a.currentSrc || a.src);
+      // Try remote fallback once before giving up
+      if (!fallbackTried.current) {
+        fallbackTried.current = true;
+        a.src = FALLBACK_SRC;
+        try {
+          a.load();
+          if (isOpened || hasInteracted) a.play().catch((e) => console.warn("[music] fallback play failed:", e));
+        } catch {
+          /* ignore */
+        }
+        return;
+      }
       setIsAvailable(false);
       setIsPlaying(false);
     };
@@ -45,7 +60,7 @@ export function MusicControl({ isOpened }: { isOpened: boolean }) {
       a.removeEventListener("pause", onPause);
       a.removeEventListener("error", onError);
     };
-  }, []);
+  }, [isOpened, hasInteracted]);
 
   // pause when tab hidden to be polite
   useEffect(() => {
@@ -66,33 +81,42 @@ export function MusicControl({ isOpened }: { isOpened: boolean }) {
       a.pause();
     } else {
       try {
+        console.debug("[music] toggle play attempt, src=", a.currentSrc || a.src, "readyState=", a.readyState);
         await a.play();
-      } catch {
-        setIsAvailable(false);
+      } catch (e) {
+        // Don't permanently disable on autoplay-policy rejections (NotAllowedError/AbortError);
+        // only mark unavailable when the media itself can't load.
+        const name = (e as DOMException)?.name;
+        console.warn("[music] toggle play() rejected:", name, e);
+        if (name === "NotSupportedError" || a.error) {
+          setIsAvailable(false);
+        }
       }
     }
   };
 
-  if (!isOpened) return null;
+  const src = eventConfig.backgroundAudio ?? "/assets/bg-music.mp3";
 
-  const src = eventConfig.backgroundAudio;
-
+  // Keep <audio> mounted in the SAME tree position before & after open,
+  // otherwise React remounts it on isOpened change and kills playback
+  // that was just started synchronously in the click gesture.
   return (
     <>
       <audio
+        id="bg-music"
         ref={audioRef}
         src={src}
         loop
         preload="auto"
-        crossOrigin="anonymous"
-        onError={() => setIsAvailable(false)}
+        playsInline
       />
-
+      {!isOpened ? null : (
+      <>
       {/* Floating control — editorial pill */}
       <div
         style={{
           position: "fixed",
-          right: 16,
+          left: 80,
           bottom: 16,
           zIndex: 50,
           display: "flex",
@@ -224,6 +248,8 @@ export function MusicControl({ isOpened }: { isOpened: boolean }) {
           span[style*="animation: pulse"] { animation: none !important; }
         }
       `}</style>
+      </>
+      )}
     </>
   );
 }

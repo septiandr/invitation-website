@@ -6,101 +6,146 @@ import { Hero } from "../components/Hero/Hero";
 import { Countdown } from "../components/Countdown/Countdown";
 import { EventDetails } from "../components/EventDetails/EventDetails";
 import { Gallery } from "../components/Gallery/Gallery";
+import { PreWedding } from "../components/PreWedding/PreWedding";
 import { Location } from "../components/Location/Location";
 import { RsvpForm } from "../components/RsvpForm/RsvpForm";
 import { Wishes } from "../components/Wishes/Wishes";
 import { MusicControl } from "../components/MusicControl/MusicControl";
 import { OpeningQuote, CoupleProfile, LoveStory, WeddingGift, GuestQr, Closing } from "../components/InvitationSections";
+import { getLang, setLang, t } from "../lib/i18n";
 
 gsap.registerPlugin(ScrollTrigger);
+
+const NAV = [
+  { id: "couple", idLabel: "Mempelai", enLabel: "Couple" },
+  { id: "details", idLabel: "Detail Acara", enLabel: "Details" },
+  { id: "countdown", idLabel: "Hitung Mundur", enLabel: "Countdown" },
+  { id: "gallery", idLabel: "Galeri", enLabel: "Gallery" },
+  { id: "prewedding", idLabel: "Pre Wedding & Live", enLabel: "Pre Wedding & Live" },
+  { id: "location", idLabel: "Lokasi", enLabel: "Location" },
+  { id: "rsvp", idLabel: "RSVP", enLabel: "RSVP" },
+  { id: "wishes", idLabel: "Ucapan", enLabel: "Wishes" },
+  { id: "gift", idLabel: "Tanda Kasih", enLabel: "Gift" },
+];
+
+function FloatingChrome() {
+  const lang = getLang();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const go = (id: string) => {
+    setMenuOpen(false);
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+  return (
+    <>
+      {/* hamburger bottom-left */}
+      <button onClick={() => setMenuOpen((v) => !v)} aria-label="Menu"
+        style={{ position: "fixed", left: 12, bottom: 12, zIndex: 70, width: 44, height: 44, borderRadius: "50%", border: "none", background: "#2C3F4E", color: "#fff", fontSize: 20, cursor: "pointer", boxShadow: "0 6px 20px rgba(0,0,0,.3)" }}>
+        {menuOpen ? "✕" : "☰"}
+      </button>
+      {menuOpen && (
+        <div role="dialog" aria-label="Navigasi"
+          style={{ position: "fixed", inset: 0, zIndex: 69, background: "rgba(0,0,0,.45)" }} onClick={() => setMenuOpen(false)}>
+          <nav onClick={(e) => e.stopPropagation()}
+            style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "min(85vw, 300px)", background: "#2C3F4E", padding: "24px 16px", display: "flex", flexDirection: "column", gap: 4 }}>
+            <p style={{ fontFamily: "var(--font-display)", color: "#FEFEFE", fontSize: 22, margin: "0 0 8px", textAlign: "right" }}>Ricky & Fellycia</p>
+            {NAV.map((n) => (
+              <button key={n.id} onClick={() => go(n.id)}
+                style={{ background: "none", border: "none", color: "#FEFEFE", textAlign: "right", fontFamily: "var(--font-ui)", fontSize: 13, letterSpacing: 3, textTransform: "uppercase", padding: "10px 4px", cursor: "pointer" }}>
+                {t(lang, n.idLabel, n.enLabel)}
+              </button>
+            ))}
+            <div style={{ height: 2, background: "rgba(255,255,255,.4)", margin: "12px 0", opacity: 0.4 }} />
+            <p style={{ color: "rgba(255,255,255,.8)", fontSize: 12, textAlign: "right", margin: 0 }}>Created with Love by Invitato</p>
+          </nav>
+        </div>
+      )}
+      {/* language bottom-right */}
+      <button onClick={() => setLang(lang === "id" ? "en" : "id")} aria-label="Ganti bahasa"
+        style={{ position: "fixed", right: 72, bottom: 16, zIndex: 60, height: 36, borderRadius: 18, border: "1px solid var(--color-line)", background: "#fff", padding: "0 14px", fontFamily: "var(--font-ui)", fontSize: 12, letterSpacing: "0.08em", cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,.15)" }}>
+        🌐 {lang.toUpperCase()}
+      </button>
+    </>
+  );
+}
 
 export default function App() {
   const [isOpened, setIsOpened] = useState(false);
 
   const handleOpen = useCallback(() => {
+    // IMPORTANT: call .play() synchronously inside the click gesture.
+    // iOS Safari / Chrome mobile reject play() when deferred via setTimeout/useEffect.
+    const audio = document.getElementById("bg-music") as HTMLAudioElement | null;
+    if (audio) {
+      audio.volume = 0.6;
+      audio.play().catch((err) => {
+        // Retry once after a tick (media may still be loading) + unlock on next touch
+        console.warn("[music] initial play() failed, will retry on interaction:", err);
+        const retry = () => {
+          audio.play().then(() => {
+            document.removeEventListener("touchend", retry);
+            document.removeEventListener("click", retry);
+          }).catch(() => {});
+        };
+        document.addEventListener("touchend", retry, { once: true });
+        document.addEventListener("click", retry, { once: true });
+        setTimeout(retry, 500);
+      });
+    }
     setIsOpened(true);
-    // smooth scroll ke hero, jadi scroll + buka sama-sama bisa
     setTimeout(() => {
       document.getElementById("hero")?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 120);
   }, []);
 
-  // Scroll & look selalu aktif — tidak terkunci body. isOpened hanya untuk musik + efek cover keluar
   useEffect(() => {
     document.body.style.overflow = "auto";
   }, []);
 
-  // GSAP ScrollTrigger untuk semua section — jalan sejak mount, tidak nunggu isOpened
   useEffect(() => {
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const ctx = gsap.context(() => {
-      if (reduceMotion) {
-        gsap.set(".page-content section, .page-content footer", { opacity: 1, y: 0, filter: "none" });
-        gsap.set(".img-hover img", { scale: 1 });
-        return;
-      }
-      // section entrance (kecuali cover)
+      if (reduceMotion) return;
+      // Hanya animasikan anak .stagger (bukan article pembungkusnya) agar tidak double-hidden.
+      // immediateRender:false agar konten tetap terlihat kalau trigger belum aktif / gagal refresh.
       gsap.utils.toArray<HTMLElement>(".page-content section").forEach((section) => {
         const heading = section.querySelectorAll(".kicker, h2, h3");
         const media = section.querySelectorAll("img, iframe");
-        const cards = section.querySelectorAll(".stagger > *, form, article");
-
-        gsap.fromTo(section, { backgroundPosition: "50% 0%" }, {
-          backgroundPosition: "50% 12%",
-          ease: "none",
-          scrollTrigger: { trigger: section, start: "top bottom", end: "bottom top", scrub: 1 },
-        });
+        const cards = section.querySelectorAll(".stagger > *, form");
         if (heading.length) {
           gsap.fromTo(heading, { opacity: 0, y: 35, filter: "blur(6px)" }, {
-            opacity: 1, y: 0, filter: "blur(0px)", duration: 0.9, stagger: 0.1,
-            scrollTrigger: { trigger: section, start: "top 82%", once: true },
+            opacity: 1, y: 0, filter: "blur(0px)", duration: 0.9, stagger: 0.1, immediateRender: false,
+            scrollTrigger: { trigger: section, start: "top 88%", once: true },
           });
         }
         if (media.length) {
-          gsap.fromTo(media, { opacity: 0, scale: 1.08, y: 28 }, {
-            opacity: 1, scale: 1, y: 0, duration: 1.2, ease: "power3.out", stagger: 0.12,
-            scrollTrigger: { trigger: section, start: "top 78%", once: true },
+          gsap.fromTo(media, { opacity: 0, scale: 1.06, y: 24 }, {
+            opacity: 1, scale: 1, y: 0, duration: 1.1, ease: "power3.out", stagger: 0.1, immediateRender: false,
+            scrollTrigger: { trigger: section, start: "top 85%", once: true },
           });
         }
         if (cards.length) {
-          gsap.fromTo(cards, { opacity: 0, y: 30, rotateX: 5 }, {
-            opacity: 1, y: 0, rotateX: 0, duration: 0.8, ease: "power3.out", stagger: 0.1,
-            scrollTrigger: { trigger: section, start: "top 74%", once: true },
+          gsap.fromTo(cards, { opacity: 0, y: 28 }, {
+            opacity: 1, y: 0, duration: 0.8, ease: "power3.out", stagger: 0.08, immediateRender: false,
+            scrollTrigger: { trigger: section, start: "top 85%", once: true },
           });
         }
       });
-
-      gsap.utils.toArray<HTMLElement>(".img-hover").forEach((figure) => {
-        const image = figure.querySelector("img");
-        if (!image) return;
-        const moveX = gsap.quickTo(image, "x", { duration: 0.6, ease: "power3.out" });
-        const moveY = gsap.quickTo(image, "y", { duration: 0.6, ease: "power3.out" });
-        const enter = () => gsap.to(image, { scale: 1.06, duration: 0.8, ease: "power3.out" });
-        const leave = () => { gsap.to(image, { scale: 1, duration: 0.8, ease: "power3.out" }); moveX(0); moveY(0); };
-        const move = (event: MouseEvent) => {
-          const rect = figure.getBoundingClientRect();
-          moveX((event.clientX - rect.left - rect.width / 2) * 0.035);
-          moveY((event.clientY - rect.top - rect.height / 2) * 0.035);
-        };
-        figure.addEventListener("mouseenter", enter);
-        figure.addEventListener("mouseleave", leave);
-        figure.addEventListener("mousemove", move);
-      });
-
-      gsap.to(".page-content footer", {
-        opacity: 0.55,
-        scrollTrigger: { trigger: ".page-content footer", start: "top bottom", end: "bottom bottom", scrub: true },
-      });
     });
-    return () => ctx.revert();
+    // Refresh posisi trigger setelah font/gambar/cover berubah agar section tidak stuck opacity:0
+    const refresh = () => ScrollTrigger.refresh();
+    window.addEventListener("load", refresh);
+    const t = setTimeout(refresh, 800);
+    return () => { window.removeEventListener("load", refresh); clearTimeout(t); ctx.revert(); };
   }, []);
 
-  // Cover keluar dengan GSAP saat isOpened true (tanpa mengunci scroll)
   useEffect(() => {
     if (!isOpened) return;
+    // Layout berubah saat cover hilang → hitung ulang posisi ScrollTrigger
+    const refresh = () => ScrollTrigger.refresh();
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduce) {
       gsap.set(".cover-layer", { display: "none" });
+      setTimeout(refresh, 50);
       return;
     }
     gsap.to(".cover-layer", {
@@ -108,26 +153,25 @@ export default function App() {
       duration: 1.1,
       ease: "power4.inOut",
       overwrite: true,
-      onComplete: () => gsap.set(".cover-layer", { display: "none" }),
+      onComplete: () => { gsap.set(".cover-layer", { display: "none" }); setTimeout(refresh, 50); },
     });
   }, [isOpened]);
 
   return (
-    <div>
-      {/* Cover = section pertama scrollable + overlay yang slide-out saat dibuka */}
-      <div className="cover-layer" style={{ position: "relative", zIndex: 1 }} aria-hidden={isOpened && true}>
+    <div className="invite-shell">
+      <div className="cover-layer" style={{ position: "relative", zIndex: 1 }}>
         <Cover isOpened={isOpened} onOpen={handleOpen} />
-        {/* helper hint scroll tetap terlihat sebelum dibuka */}
       </div>
 
+      {/* order mirrors invitato: welcome/hero, quote, couple, countdown, details, gallery, location, rsvp, wishes, gift, qr, footer */}
       <div className="page-content">
         <Hero />
         <OpeningQuote />
         <CoupleProfile />
-        <EventDetails />
         <Countdown />
-        <LoveStory />
+        <EventDetails />
         <Gallery />
+        <PreWedding />
         <Location />
         <RsvpForm />
         <Wishes />
@@ -137,6 +181,7 @@ export default function App() {
       </div>
 
       <MusicControl isOpened={isOpened} />
+      <FloatingChrome />
     </div>
   );
 }

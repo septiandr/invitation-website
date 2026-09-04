@@ -1,28 +1,38 @@
+import { getGuestName, getLang, t } from "../../lib/i18n";
 import { eventConfig } from "../../app/eventConfig";
 
 export function Hero() {
+  const lang = getLang();
+  const guest = getGuestName(t(lang, "Keluarga & Teman-teman", "Family & Friends"));
   return (
-    <section id="hero" className="section-pad" style={{ background: "var(--color-paper-alt)" }}>
-      <div className="container" style={{ textAlign: "center" }}>
-        <p className="kicker" style={{ color: "var(--color-muted)" }}>We are getting married</p>
-        <h2 className="display" style={{ fontSize: "var(--text-h1)", margin: "12px 0 8px", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-          Ricky <span className="script" style={{ textTransform: "none", letterSpacing: 0, fontSize: "0.9em", color: "var(--color-ink)", margin: "0 6px" }}>&</span> Felly
-        </h2>
-        <p style={{ maxWidth: "58ch", margin: "0 auto", color: "var(--color-muted)", fontFamily: "var(--font-body)", fontSize: 17, lineHeight: 1.8 }}>
-          With joyful hearts, we invite you to witness and celebrate our sacred vows of love and commitment.
-          Your presence will make our day truly unforgettable.
+    <section id="hero" style={{ background: "#D5DADE", padding: "54px 24px 30px", textAlign: "center", position: "relative", overflow: "hidden" }}>
+      <div style={{ maxWidth: 430, margin: "0 auto", minHeight: 820 }}>
+        <p style={{ fontFamily: "var(--font-body)", fontSize: 19, color: "#2C3F4E", margin: 0 }}>
+          {t(lang, "Kepada Bapak/Ibu/Saudara/i,", "Dear Mr/Mrs/Ms,")}
         </p>
-        <div style={{ marginTop: 36, display: "grid", gridTemplateColumns: "1fr", gap: 18, justifyItems: "center" }}>
-          <figure className="img-hover" style={{ margin: 0, width: "min(100%, 560px)", aspectRatio: "4 / 4.8", overflow: "hidden", background: "#ddd", borderRadius: 16, border: "1px solid var(--color-line)" }}>
-            <img src="/assets/2.png" alt="Portrait of Ricky & Felly" loading="eager" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "50% 25%" }} />
-          </figure>
-          <p style={{ fontFamily: "var(--font-body)", fontStyle: "italic", color: "var(--color-muted)", margin: 0, fontSize: 16, maxWidth: "48ch" }}>
-            "Love is not about how much you say I love you, but how much you can prove it."
-          </p>
-          <p style={{ fontFamily: "var(--font-ui)", fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--color-muted)", margin: 0 }}>
-            -- Ricky & Felly
-          </p>
+        <p style={{ fontFamily: "var(--font-display)", fontSize: 24, color: "#2C3F4E", margin: "8px 0 0" }}>{guest}</p>
+
+        <div style={{ marginTop: 28, lineHeight: 1.1 }}>
+          <div style={{ fontFamily: "var(--font-display)", fontSize: 30, color: "#2C3F4E" }}>Ricky</div>
+          <div style={{ fontFamily: "var(--font-script)", fontSize: 66, fontWeight: 300, margin: "-6px 0", color: "#2C3F4E" }}>and</div>
+          <div style={{ fontFamily: "var(--font-display)", fontSize: 30, color: "#2C3F4E" }}>Fellycia</div>
         </div>
+
+        <blockquote style={{ maxWidth: 340, margin: "22px auto 0", fontFamily: "var(--font-body)", fontSize: 19, lineHeight: 1.6, color: "#2C3F4E" }}>
+          “{eventConfig.quote.text}”
+        </blockquote>
+        <p style={{ fontFamily: "var(--font-body)", fontWeight: 700, textTransform: "uppercase", fontSize: 15, marginTop: 20, color: "#2C3F4E" }}>— {eventConfig.quote.source}</p>
+
+        {/* layered welcome visual: wide bg + portrait overlay */}
+        <div style={{ position: "relative", marginTop: "18%" }}>
+          <img src="/assets/5.png" alt="Welcome background" loading="lazy"
+            style={{ width: "100%", height: 440, maxWidth: 500, objectFit: "cover", objectPosition: "center", margin: "0 auto", display: "block" }} />
+          <img src="/assets/1.png" alt="Ricky and Fellycia" loading="eager"
+            style={{ position: "absolute", top: "-18%", left: "50%", transform: "translateX(-50%)", width: 273, height: 420, maxWidth: "70%", objectFit: "cover", objectPosition: "50% 20%", zIndex: 2, border: "6px solid #fff", boxShadow: "0 12px 32px rgba(44,63,78,.2)" }} />
+        </div>
+        <p style={{ marginTop: 18, fontFamily: "var(--font-body)", fontSize: 17, color: "#737373" }}>
+          {t(lang, "Dengan penuh sukacita, kami menyambut Anda di halaman kisah cinta kami.", "Together with joyful hearts, we welcome you to our love story.")}
+        </p>
       </div>
     </section>
   );
