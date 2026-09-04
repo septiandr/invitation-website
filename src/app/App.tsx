@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { ScrollToPlugin } from "gsap/ScrollToPlugin";
 import { Cover } from "../components/Cover/Cover";
 import { Hero } from "../components/Hero/Hero";
+import { DesktopBanner } from "../components/DesktopBanner/DesktopBanner";
 import { Countdown } from "../components/Countdown/Countdown";
 import { EventDetails } from "../components/EventDetails/EventDetails";
 import { Gallery } from "../components/Gallery/Gallery";
@@ -14,7 +16,7 @@ import { MusicControl } from "../components/MusicControl/MusicControl";
 import { OpeningQuote, CoupleProfile, LoveStory, WeddingGift, GuestQr, Closing } from "../components/InvitationSections";
 import { getLang, setLang, t } from "../lib/i18n";
 
-gsap.registerPlugin(ScrollTrigger);
+gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
 
 const NAV = [
   { id: "couple", idLabel: "Mempelai", enLabel: "Couple" },
@@ -92,14 +94,16 @@ export default function App() {
       });
     }
     setIsOpened(true);
-    setTimeout(() => {
-      document.getElementById("hero")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 120);
+    // Scroll halus ke konten undangan ditangani di useEffect([isOpened])
+    // agar cover tetap menempati alur dokumen saat scroll berlangsung.
   }, []);
 
+  // Sebelum dibuka: kunci scroll agar cover menjadi “layar pertama” penuh.
+  // Setelah klik, scroll dilepas dan halaman benar-benar digulir ke konten.
   useEffect(() => {
-    document.body.style.overflow = "auto";
-  }, []);
+    document.body.style.overflow = isOpened ? "" : "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, [isOpened]);
 
   useEffect(() => {
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -140,28 +144,58 @@ export default function App() {
 
   useEffect(() => {
     if (!isOpened) return;
-    // Layout berubah saat cover hilang → hitung ulang posisi ScrollTrigger
-    const refresh = () => ScrollTrigger.refresh();
+    // Alur buka: cover adalah “layar pertama” dalam alur dokumen (100svh).
+    // Klik → halaman benar-benar di-scroll halus ke bawah ke konten undangan
+    // (scrollbar bergerak) via GSAP ScrollToPlugin — tween per-frame jadi
+    // mulus di semua browser, tidak bergantung dukungan smooth-scroll asli.
+    const coverEl = document.querySelector<HTMLElement>(".cover-layer");
+    const hero = document.getElementById("hero");
+    if (!coverEl || !hero) return;
+
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduce) {
+    const target = hero.getBoundingClientRect().top + window.scrollY;
+    let finished = false;
+
+    const html = document.documentElement;
+    const prevScrollBehavior = html.style.scrollBehavior;
+
+    const hideCover = () => {
+      if (finished) return;
+      finished = true;
       gsap.set(".cover-layer", { display: "none" });
-      setTimeout(refresh, 50);
-      return;
-    }
-    gsap.to(".cover-layer", {
-      yPercent: -100,
-      duration: 1.1,
-      ease: "power4.inOut",
-      overwrite: true,
-      onComplete: () => { gsap.set(".cover-layer", { display: "none" }); setTimeout(refresh, 50); },
+      // Penghapusan cover menggeser konten naik setinggi cover; kompensasi
+      // langsung di frame yang sama agar tampilan tidak berubah mendadak.
+      html.style.scrollBehavior = "auto";
+      window.scrollTo(0, 0);
+      html.style.scrollBehavior = prevScrollBehavior;
+      ScrollTrigger.refresh();
+    };
+
+    // Matikan sementara CSS scroll-behavior:smooth agar tween per-frame 1:1
+    // (kalau tetap smooth, setiap langkah malah memicu scroll asli yang tertunda).
+    // Pengguna dengan prefers-reduced-motion tetap mendapat scroll (permintaan
+    // klien), hanya lebih pendek & sederhana agar geraknya tidak berlebihan.
+    html.style.scrollBehavior = "auto";
+    gsap.to(window, {
+      scrollTo: { y: target, autoKill: true },
+      duration: reduce ? 0.6 : 1.15,
+      ease: reduce ? "power1.inOut" : "power2.inOut",
+      onComplete: hideCover,
+      // Pengguna menyela scroll → hentikan & langsung selesaikan tanpa macet.
+      onInterrupt: hideCover,
     });
   }, [isOpened]);
 
   return (
     <div className="invite-shell">
-      <div className="cover-layer" style={{ position: "relative", zIndex: 1 }}>
+      {/* cover = gerbang penuh layar di alur dokumen; setelah dibuka halaman
+          benar-benar di-scroll turun ke konten, lalu cover disembunyikan */}
+      <div className="cover-layer">
         <Cover isOpened={isOpened} onOpen={handleOpen} />
       </div>
+
+      {/* banner 3/4 (desktop, kiri, sticky) + undangan digital 1/4 (kanan) */}
+      <DesktopBanner />
 
       {/* order mirrors invitato: welcome/hero, quote, couple, countdown, details, gallery, location, rsvp, wishes, gift, qr, footer */}
       <div className="page-content">

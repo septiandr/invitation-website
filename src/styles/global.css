@@ -59,6 +59,17 @@ button { font-family: inherit; }
 }
 .invite-shell section, .invite-shell footer { max-width: var(--invite-max); margin-inline: auto; }
 
+/* Banner desktop (3/4 kiri). Default: disembunyikan, hanya aktif di layar lebar. */
+.cover-layer {
+  /* Cover = layar pertama dalam alur dokumen (tinggi 100svh dari Cover.tsx).
+     Setelah “Buka Undangan” diklik, halaman di-scroll asli ke bawah
+     menuju konten undangan — tidak ada lompatan layout karena cover
+     tetap menempati posisi awalnya di dokumen. */
+  position: relative;
+  z-index: 40;
+}
+.desktop-banner { display: none; }
+
 /* decorative curve like /template-rickyfelly/static/curve-*.svg */
 .curve-deco {
   position: absolute;
@@ -199,3 +210,40 @@ button { font-family: inherit; }
 .error-text { color: #9b2c2c; font-size: 13px; font-family: var(--font-ui); }
 .success-box { background: #f0f4f3; border: 1px solid rgba(44,63,78,0.14); padding: 14px; border-radius: 8px; color: var(--color-ink); font-family: var(--font-ui); font-size: 13px; }
 .error-box { background: #fef2f2; border: 1px solid #fecaca; padding: 14px; border-radius: 8px; color: #991b1b; font-family: var(--font-ui); font-size: 13px; }
+
+/* ------------------------------------------------------------------
+   Tampilan desktop: banner foto 3/4 (kiri, tetap) + undangan digital 1/4 (kanan).
+   Di bawah 1200px kembali ke kolom undangan terpusat seperti versi mobile.
+------------------------------------------------------------------- */
+@media (min-width: 1200px) {
+  .invite-shell {
+    max-width: none;
+    width: 100%;
+    margin: 0;
+    box-shadow: none;
+    background: #1a1d20; /* gelap di belakang agar kontras dengan kolom kertas */
+  }
+
+  /* cover = gerbang penuh layar */
+  .cover-layer section { max-width: none; }
+
+  /* kolom undangan di kanan (1/4, maks 480px agar tetap nyaman dibaca) */
+  .page-content {
+    width: clamp(340px, 25vw, 480px);
+    margin-left: calc(100% - clamp(340px, 25vw, 480px));
+    background: var(--color-paper);
+  }
+
+  /* banner foto di kiri: menempel (fixed) selama undangan di-scroll */
+  .desktop-banner {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: calc(100% - clamp(340px, 25vw, 480px));
+    height: 100svh;
+    z-index: 1;
+    overflow: hidden;
+    background: #22272c;
+  }
+}

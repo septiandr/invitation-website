@@ -24,7 +24,7 @@ export function Hero() {
         <p style={{ fontFamily: "var(--font-body)", fontWeight: 700, textTransform: "uppercase", fontSize: 15, marginTop: 20, color: "#2C3F4E" }}>— {eventConfig.quote.source}</p>
 
         {/* layered welcome visual: wide bg + portrait overlay */}
-        <div style={{ position: "relative", marginTop: "18%" }}>
+        <div style={{ position: "relative", marginTop: "30%" }}>
           <img src="/assets/5.png" alt="Welcome background" loading="lazy"
             style={{ width: "100%", height: 440, maxWidth: 500, objectFit: "cover", objectPosition: "center", margin: "0 auto", display: "block" }} />
           <img src="/assets/1.png" alt="Ricky and Fellycia" loading="eager"

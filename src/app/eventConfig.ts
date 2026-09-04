@@ -23,6 +23,8 @@ export type EventConfig = {
     alt: string;
     objectPosition?: string;
   }>;
+  /** Foto untuk banner desktop (75% kiri). objectPosition default 50% 42%. */
+  desktopBanner?: { image: string; objectPosition?: string };
   backgroundAudio?: string;
   quote: { text: string; source: string };
   groom: { role: string; roleEn: string; nickname: string; fullName: string; parents: string; bio: string; image: string; instagram: string };
@@ -86,6 +88,7 @@ export const eventConfig: EventConfig = {
     { src: "/assets/9.png", alt: "Joyful landscape moment", objectPosition: "50% 50%" },
     { src: "/assets/10.png", alt: "Feature landscape with elegant composition", objectPosition: "50% 50%" },
   ],
+  desktopBanner: { image: "/assets/9.png", objectPosition: "50% 42%" },
   backgroundAudio: "/assets/bg-music.mp3",
   quote: {
     text: "Together with joyful hearts, we are pleased to announce the beginning of this new chapter of our lives together.",
