@@ -1,4 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Cover } from "../components/Cover/Cover";
 import { Hero } from "../components/Hero/Hero";
 import { Countdown } from "../components/Countdown/Countdown";
@@ -8,89 +10,130 @@ import { Location } from "../components/Location/Location";
 import { RsvpForm } from "../components/RsvpForm/RsvpForm";
 import { Wishes } from "../components/Wishes/Wishes";
 import { MusicControl } from "../components/MusicControl/MusicControl";
-import { eventConfig } from "./eventConfig";
+import { OpeningQuote, CoupleProfile, LoveStory, WeddingGift, GuestQr, Closing } from "../components/InvitationSections";
+
+gsap.registerPlugin(ScrollTrigger);
 
 export default function App() {
   const [isOpened, setIsOpened] = useState(false);
 
+  const handleOpen = useCallback(() => {
+    setIsOpened(true);
+    // smooth scroll ke hero, jadi scroll + buka sama-sama bisa
+    setTimeout(() => {
+      document.getElementById("hero")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 120);
+  }, []);
+
+  // Scroll & look selalu aktif — tidak terkunci body. isOpened hanya untuk musik + efek cover keluar
   useEffect(() => {
-    if (isOpened) {
-      document.body.style.overflow = "auto";
-      // scroll to hero smoothly
-      setTimeout(() => {
-        document.getElementById("hero")?.scrollIntoView({ behavior: "smooth" });
-      }, 100);
-    } else {
-      document.body.style.overflow = "hidden";
+    document.body.style.overflow = "auto";
+  }, []);
+
+  // GSAP ScrollTrigger untuk semua section — jalan sejak mount, tidak nunggu isOpened
+  useEffect(() => {
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const ctx = gsap.context(() => {
+      if (reduceMotion) {
+        gsap.set(".page-content section, .page-content footer", { opacity: 1, y: 0, filter: "none" });
+        gsap.set(".img-hover img", { scale: 1 });
+        return;
+      }
+      // section entrance (kecuali cover)
+      gsap.utils.toArray<HTMLElement>(".page-content section").forEach((section) => {
+        const heading = section.querySelectorAll(".kicker, h2, h3");
+        const media = section.querySelectorAll("img, iframe");
+        const cards = section.querySelectorAll(".stagger > *, form, article");
+
+        gsap.fromTo(section, { backgroundPosition: "50% 0%" }, {
+          backgroundPosition: "50% 12%",
+          ease: "none",
+          scrollTrigger: { trigger: section, start: "top bottom", end: "bottom top", scrub: 1 },
+        });
+        if (heading.length) {
+          gsap.fromTo(heading, { opacity: 0, y: 35, filter: "blur(6px)" }, {
+            opacity: 1, y: 0, filter: "blur(0px)", duration: 0.9, stagger: 0.1,
+            scrollTrigger: { trigger: section, start: "top 82%", once: true },
+          });
+        }
+        if (media.length) {
+          gsap.fromTo(media, { opacity: 0, scale: 1.08, y: 28 }, {
+            opacity: 1, scale: 1, y: 0, duration: 1.2, ease: "power3.out", stagger: 0.12,
+            scrollTrigger: { trigger: section, start: "top 78%", once: true },
+          });
+        }
+        if (cards.length) {
+          gsap.fromTo(cards, { opacity: 0, y: 30, rotateX: 5 }, {
+            opacity: 1, y: 0, rotateX: 0, duration: 0.8, ease: "power3.out", stagger: 0.1,
+            scrollTrigger: { trigger: section, start: "top 74%", once: true },
+          });
+        }
+      });
+
+      gsap.utils.toArray<HTMLElement>(".img-hover").forEach((figure) => {
+        const image = figure.querySelector("img");
+        if (!image) return;
+        const moveX = gsap.quickTo(image, "x", { duration: 0.6, ease: "power3.out" });
+        const moveY = gsap.quickTo(image, "y", { duration: 0.6, ease: "power3.out" });
+        const enter = () => gsap.to(image, { scale: 1.06, duration: 0.8, ease: "power3.out" });
+        const leave = () => { gsap.to(image, { scale: 1, duration: 0.8, ease: "power3.out" }); moveX(0); moveY(0); };
+        const move = (event: MouseEvent) => {
+          const rect = figure.getBoundingClientRect();
+          moveX((event.clientX - rect.left - rect.width / 2) * 0.035);
+          moveY((event.clientY - rect.top - rect.height / 2) * 0.035);
+        };
+        figure.addEventListener("mouseenter", enter);
+        figure.addEventListener("mouseleave", leave);
+        figure.addEventListener("mousemove", move);
+      });
+
+      gsap.to(".page-content footer", {
+        opacity: 0.55,
+        scrollTrigger: { trigger: ".page-content footer", start: "top bottom", end: "bottom bottom", scrub: true },
+      });
+    });
+    return () => ctx.revert();
+  }, []);
+
+  // Cover keluar dengan GSAP saat isOpened true (tanpa mengunci scroll)
+  useEffect(() => {
+    if (!isOpened) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) {
+      gsap.set(".cover-layer", { display: "none" });
+      return;
     }
+    gsap.to(".cover-layer", {
+      yPercent: -100,
+      duration: 1.1,
+      ease: "power4.inOut",
+      overwrite: true,
+      onComplete: () => gsap.set(".cover-layer", { display: "none" }),
+    });
   }, [isOpened]);
 
   return (
     <div>
-      <div
-        style={{
-          position: "fixed",
-          inset: 0,
-          zIndex: 40,
-          transform: isOpened ? "translateY(-100%)" : "translateY(0)",
-          opacity: isOpened ? 0 : 1,
-          transition: "transform 900ms cubic-bezier(0.22,1,0.36,1), opacity 700ms ease",
-          pointerEvents: isOpened ? "none" : "auto",
-        }}
-        aria-hidden={isOpened}
-      >
-        <Cover isOpened={isOpened} onOpen={() => setIsOpened(true)} />
+      {/* Cover = section pertama scrollable + overlay yang slide-out saat dibuka */}
+      <div className="cover-layer" style={{ position: "relative", zIndex: 1 }} aria-hidden={isOpened && true}>
+        <Cover isOpened={isOpened} onOpen={handleOpen} />
+        {/* helper hint scroll tetap terlihat sebelum dibuka */}
       </div>
 
-      <div
-        aria-hidden={!isOpened}
-        style={{
-          opacity: isOpened ? 1 : 0,
-          transform: isOpened ? "translateY(0) scale(1)" : "translateY(12px) scale(0.98)",
-          transition: "opacity 900ms cubic-bezier(0.22,1,0.36,1) 200ms, transform 900ms cubic-bezier(0.22,1,0.36,1) 200ms",
-          pointerEvents: isOpened ? "auto" : "none",
-        }}
-      >
-        {/* sticky nav minimal */}
-        <header
-          style={{
-            position: "sticky",
-            top: 0,
-            zIndex: 20,
-            background: "rgb(255 255 255 / 92%)",
-            backdropFilter: "blur(8px)",
-            borderBottom: "1px solid var(--color-line)",
-          }}
-        >
-          <nav className="container" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0", gap: 12 }}>
-            <span style={{ fontFamily: "var(--font-display)", fontWeight: 400, fontSize: 15, letterSpacing: "0.12em", textTransform: "uppercase" }}>{eventConfig.coupleNames}</span>
-            <div style={{ display: "flex", gap: 16, fontFamily: "var(--font-ui)", fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 400 }}>
-              <a href="#rsvp" style={{ textDecoration: "none" }}>RSVP</a>
-              <a href="#wishes" style={{ textDecoration: "none" }}>Wishes</a>
-              <a href="#location" style={{ textDecoration: "none" }}>Maps</a>
-            </div>
-          </nav>
-        </header>
-
+      <div className="page-content">
         <Hero />
-        <Countdown />
+        <OpeningQuote />
+        <CoupleProfile />
         <EventDetails />
+        <Countdown />
+        <LoveStory />
         <Gallery />
         <Location />
         <RsvpForm />
         <Wishes />
-
-        <footer style={{ background: "#2C3F4E", color: "white", padding: "44px 0", textAlign: "center" }}>
-          <div className="container">
-            <p style={{ fontFamily: "var(--font-display)", fontSize: 26, margin: 0, letterSpacing: "0.06em", textTransform: "uppercase" }}>{eventConfig.coupleNames}</p>
-            <p className="script" style={{ margin: "6px 0 0", color: "rgba(255,255,255,0.85)", fontSize: 22 }}>
-              Thank you for being part of our love story
-            </p>
-            <p style={{ margin: "18px 0 0", fontFamily: "var(--font-ui)", fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.55)" }}>
-              © 2026 Ricky & Felly. Crafted with love.
-            </p>
-          </div>
-        </footer>
+        <WeddingGift />
+        <GuestQr />
+        <Closing />
       </div>
 
       <MusicControl isOpened={isOpened} />
