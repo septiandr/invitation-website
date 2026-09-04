@@ -52,19 +52,19 @@ export function RsvpForm() {
   };
 
   return (
-    <section ref={ref} id="rsvp" className={visible ? "reveal in" : "reveal"} style={{ background: "#fff" }}>
+    <section ref={ref} id="rsvp" className={visible ? "reveal in" : "reveal"} style={{ background: "var(--color-paper)" }}>
       <div className="container section-pad" style={{ maxWidth: 720 }}>
         <div style={{ textAlign: "center", marginBottom: 28 }}>
           <p className="kicker">RSVP</p>
-          <h2 className="display" style={{ fontSize: "var(--text-h2)", margin: "8px 0 0" }}>
+          <h2 className="display" style={{ fontSize: "var(--text-h2)", margin: "8px 0 0", letterSpacing: "0.06em", textTransform: "uppercase" }}>
             Konfirmasi Kehadiran
           </h2>
-          <p style={{ margin: "10px auto 0", maxWidth: "56ch", color: "var(--color-muted)", fontSize: 14 }}>
+          <p style={{ margin: "10px auto 0", maxWidth: "56ch", color: "var(--color-muted)", fontFamily: "var(--font-body)", fontSize: 15 }}>
             Mohon konfirmasi kehadiran Anda sebelum 18 Desember 2026. Kami menantikan kebersamaan Anda.
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} noValidate style={{ display: "grid", gap: 16, background: "var(--color-paper)", padding: 24, borderRadius: 4, border: "1px solid var(--color-line)" }}>
+        <form onSubmit={handleSubmit} noValidate style={{ display: "grid", gap: 16, background: "white", padding: 24, borderRadius: 16, border: "1px solid var(--color-line)" }}>
           {status === "success" && <div className="success-box" role="status">{message}</div>}
           {status === "error" && <div className="error-box" role="alert">{message}</div>}
 

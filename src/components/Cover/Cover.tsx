@@ -16,7 +16,7 @@ export function Cover({ isOpened, onOpen }: Props) {
         minHeight: "100svh",
         display: isOpened ? "none" : "flex",
         overflow: "hidden",
-        background: "#111",
+        background: "#2C3F4E",
       }}
     >
       <img
@@ -30,7 +30,7 @@ export function Cover({ isOpened, onOpen }: Props) {
           width: "100%",
           height: "100%",
           objectFit: "cover",
-          objectPosition: "50% 35%",
+          objectPosition: "50% 30%",
         }}
       />
       <div
@@ -38,7 +38,16 @@ export function Cover({ isOpened, onOpen }: Props) {
         style={{
           position: "absolute",
           inset: 0,
-          background: "linear-gradient(to bottom, rgb(18 18 18 / 20%), rgb(18 18 18 / 55%))",
+          background: "linear-gradient(to bottom, rgba(44,63,78,0.18), rgba(50,48,48,0.52))",
+        }}
+      />
+      {/* subtle vignette */}
+      <div
+        aria-hidden
+        style={{
+          position: "absolute",
+          inset: 0,
+          background: "radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.28) 100%)",
         }}
       />
       <div
@@ -58,8 +67,11 @@ export function Cover({ isOpened, onOpen }: Props) {
         <p
           className="kicker"
           style={{
-            color: "rgb(255 255 255 / 85%)",
+            color: "rgba(255,255,255,0.92)",
             margin: 0,
+            fontFamily: "var(--font-ui)",
+            letterSpacing: "0.28em",
+            fontSize: "10px",
             opacity: 0,
             animation: "fadeUp 700ms cubic-bezier(0.22,1,0.36,1) 100ms forwards",
           }}
@@ -67,27 +79,63 @@ export function Cover({ isOpened, onOpen }: Props) {
           The Wedding of
         </p>
 
-        <h1
-          className="display"
+        <div
           style={{
-            fontSize: "var(--text-display)",
-            margin: "14px 0 10px",
-            fontWeight: 500,
-            letterSpacing: "-0.02em",
+            marginTop: 18,
+            lineHeight: 0.9,
             opacity: 0,
             animation: "fadeUp 700ms cubic-bezier(0.22,1,0.36,1) 220ms forwards",
-            textWrap: "balance",
           }}
         >
-          {eventConfig.coverTitle}
-        </h1>
+          <div
+            className="display"
+            style={{
+              fontFamily: "var(--font-display)",
+              fontSize: "clamp(2.8rem, 10vw, 5.8rem)",
+              letterSpacing: "0.14em",
+              fontWeight: 400,
+              textTransform: "uppercase",
+              color: "white",
+            }}
+          >
+            Ricky
+          </div>
+          <div
+            className="script"
+            style={{
+              fontFamily: "var(--font-script)",
+              fontSize: "clamp(3.2rem, 14vw, 5.2rem)",
+              margin: "-6px 0 -10px",
+              color: "white",
+              fontWeight: 400,
+              transform: "rotate(-4deg)",
+            }}
+          >
+            &
+          </div>
+          <div
+            className="display"
+            style={{
+              fontFamily: "var(--font-display)",
+              fontSize: "clamp(2.8rem, 10vw, 5.8rem)",
+              letterSpacing: "0.14em",
+              fontWeight: 400,
+              textTransform: "uppercase",
+              color: "white",
+            }}
+          >
+            Felly
+          </div>
+        </div>
 
         <p
           style={{
-            margin: "16px 0 0",
-            fontSize: "12px",
-            letterSpacing: "0.14em",
+            margin: "22px 0 0",
+            fontFamily: "var(--font-ui)",
+            fontSize: "11px",
+            letterSpacing: "0.22em",
             textTransform: "uppercase",
+            color: "rgba(255,255,255,0.9)",
             opacity: 0,
             animation: "fadeUp 700ms cubic-bezier(0.22,1,0.36,1) 340ms forwards",
           }}
@@ -97,10 +145,10 @@ export function Cover({ isOpened, onOpen }: Props) {
 
         <div
           style={{
-            marginTop: 28,
+            marginTop: 24,
             height: 1,
             width: 56,
-            background: "rgb(255 255 255 / 60%)",
+            background: "rgba(255,255,255,0.55)",
             opacity: 0,
             animation: "fadeUp 700ms cubic-bezier(0.22,1,0.36,1) 440ms forwards",
           }}
@@ -109,12 +157,25 @@ export function Cover({ isOpened, onOpen }: Props) {
         <p
           style={{
             margin: "18px 0 0",
-            fontSize: 13,
-            letterSpacing: "0.06em",
-            opacity: 0.9,
+            fontFamily: "var(--font-body)",
+            fontSize: 15,
+            fontStyle: "italic",
+            color: "rgba(255,255,255,0.92)",
+            letterSpacing: "0.02em",
           }}
         >
           Kepada Yth. {eventConfig.greetingName}
+        </p>
+        <p
+          style={{
+            margin: "4px 0 0",
+            fontFamily: "var(--font-ui)",
+            fontSize: 10,
+            letterSpacing: "0.06em",
+            color: "rgba(255,255,255,0.65)",
+          }}
+        >
+          * Mohon maaf apabila ada kesalahan penulisan nama/gelar
         </p>
 
         <button
@@ -122,19 +183,18 @@ export function Cover({ isOpened, onOpen }: Props) {
           className="btn btn-ghost"
           style={{
             marginTop: 28,
-            minWidth: 220,
+            minWidth: 200,
+            fontFamily: "var(--font-ui)",
+            fontSize: 11,
+            letterSpacing: "0.18em",
+            padding: "13px 28px",
             opacity: 0,
             animation: "fadeUp 700ms cubic-bezier(0.22,1,0.36,1) 560ms forwards",
           }}
           aria-label="Buka undangan"
         >
           Buka Undangan
-          <span aria-hidden>→</span>
         </button>
-
-        <p style={{ margin: "14px 0 0", fontSize: 11, opacity: 0.7, letterSpacing: "0.08em" }}>
-          * Mohon maaf apabila ada kesalahan penulisan nama/gelar
-        </p>
       </div>
 
       <style>{`

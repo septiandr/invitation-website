@@ -45,7 +45,6 @@ export function Wishes() {
     return () => obs.disconnect();
   }, [fetchWishes, loadStatus]);
 
-  // fallback fetch on mount if sentinel not triggered
   useEffect(() => {
     const t = setTimeout(() => {
       if (loadStatus === "idle") fetchWishes();
@@ -80,7 +79,6 @@ export function Wishes() {
       setSubmitMsg(getApiErrorMessage(err, "Gagal mengirim wishes."));
     } finally {
       setSubmitStatus((s) => (s === "loading" ? "idle" : s));
-      // keep success briefly then idle
       setTimeout(() => setSubmitStatus("idle"), 2000);
     }
   };
@@ -90,17 +88,17 @@ export function Wishes() {
       <div className="container section-pad">
         <div style={{ textAlign: "center", marginBottom: 28 }}>
           <p className="kicker">Wishes</p>
-          <h2 className="display" style={{ fontSize: "var(--text-h2)", margin: "8px 0 0" }}>
+          <h2 className="display" style={{ fontSize: "var(--text-h2)", margin: "8px 0 0", letterSpacing: "0.06em", textTransform: "uppercase" }}>
             Ucapan & Doa
           </h2>
-          <p style={{ margin: "10px auto 0", maxWidth: "56ch", color: "var(--color-muted)", fontSize: 14 }}>
+          <p style={{ margin: "10px auto 0", maxWidth: "56ch", color: "var(--color-muted)", fontFamily: "var(--font-body)", fontSize: 15 }}>
             Tinggalkan pesan hangat untuk kedua mempelai. Ucapan Anda akan tampil setelah terkirim.
           </p>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 20, alignItems: "start" }}>
-          <form onSubmit={handleSubmit} noValidate style={{ background: "white", border: "1px solid var(--color-line)", padding: 24, borderRadius: 4, display: "grid", gap: 14 }}>
-            <h3 style={{ margin: 0, fontFamily: "var(--font-display)", fontSize: 22 }}>Kirim Ucapan</h3>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 18, alignItems: "start" }}>
+          <form onSubmit={handleSubmit} noValidate style={{ background: "white", border: "1px solid var(--color-line)", padding: 24, borderRadius: 16, display: "grid", gap: 14 }}>
+            <h3 style={{ margin: 0, fontFamily: "var(--font-display)", fontSize: 20, letterSpacing: "0.04em", textTransform: "uppercase" }}>Kirim Ucapan</h3>
             {submitStatus === "success" && <div className="success-box" role="status">{submitMsg}</div>}
             {submitStatus === "error" && <div className="error-box" role="alert">{submitMsg}</div>}
 
@@ -112,7 +110,7 @@ export function Wishes() {
             <div className="field">
               <label htmlFor="w-msg">Pesan</label>
               <textarea id="w-msg" value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Selamat menempuh hidup baru!" maxLength={500} aria-describedby={errors.message ? "err-w-msg" : undefined} />
-              <span style={{ fontSize: 11, color: "var(--color-muted)", textAlign: "right" }}>{message.length}/500</span>
+              <span style={{ fontFamily: "var(--font-ui)", fontSize: 11, color: "var(--color-muted)", textAlign: "right" }}>{message.length}/500</span>
               {errors.message && <span id="err-w-msg" className="error-text">{errors.message}</span>}
             </div>
             <button type="submit" disabled={submitStatus === "loading"} className="btn btn-primary">
@@ -122,26 +120,26 @@ export function Wishes() {
 
           <div style={{ display: "grid", gap: 12 }}>
             <div ref={sentinelRef} aria-hidden style={{ height: 1 }} />
-            {loadStatus === "loading" && <div style={{ background: "white", border: "1px solid var(--color-line)", padding: 14, borderRadius: 4 }}>Memuat ucapan...</div>}
+            {loadStatus === "loading" && <div style={{ background: "white", border: "1px solid var(--color-line)", padding: 14, borderRadius: 12, fontFamily: "var(--font-ui)", fontSize: 13 }}>Memuat ucapan...</div>}
             {loadStatus === "error" && (
               <div className="error-box">
                 {loadError} <button onClick={fetchWishes} className="btn btn-primary" style={{ marginLeft: 8, minHeight: 32, padding: "6px 12px" }}>Coba lagi</button>
               </div>
             )}
             {loadStatus === "success" && items.length === 0 && (
-              <div style={{ background: "white", border: "1px solid var(--color-line)", padding: 24, borderRadius: 4, textAlign: "center", color: "var(--color-muted)" }}>
+              <div style={{ background: "white", border: "1px solid var(--color-line)", padding: 24, borderRadius: 16, textAlign: "center", color: "var(--color-muted)", fontFamily: "var(--font-body)" }}>
                 Belum ada ucapan. Jadilah yang pertama mengirim doa!
               </div>
             )}
             {items.map((w) => (
-              <article key={w.id} style={{ background: "white", border: "1px solid var(--color-line)", padding: 18, borderRadius: 4 }}>
+              <article key={w.id} style={{ background: "white", border: "1px solid var(--color-line)", padding: 18, borderRadius: 16 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "baseline" }}>
-                  <strong style={{ fontSize: 15 }}>{w.name}</strong>
-                  <time style={{ fontSize: 11, color: "var(--color-muted)", whiteSpace: "nowrap" }}>
+                  <strong style={{ fontFamily: "var(--font-body)", fontSize: 15, fontWeight: 600 }}>{w.name}</strong>
+                  <time style={{ fontFamily: "var(--font-ui)", fontSize: 10, color: "var(--color-muted)", letterSpacing: "0.06em", textTransform: "uppercase", whiteSpace: "nowrap" }}>
                     {new Date(w.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
                   </time>
                 </div>
-                <p style={{ margin: "8px 0 0", color: "#2b2b2b", fontSize: 14, lineHeight: 1.6, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{w.message}</p>
+                <p style={{ margin: "8px 0 0", color: "var(--color-ink)", fontFamily: "var(--font-body)", fontSize: 15, lineHeight: 1.6, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{w.message}</p>
               </article>
             ))}
           </div>
@@ -150,5 +148,3 @@ export function Wishes() {
     </section>
   );
 }
-
-

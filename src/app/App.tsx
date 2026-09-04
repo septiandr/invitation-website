@@ -48,9 +48,9 @@ export default function App() {
             borderBottom: "1px solid var(--color-line)",
           }}
         >
-          <nav className="container" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0", gap: 12 }}>
-            <span style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 18 }}>{eventConfig.coupleNames}</span>
-            <div style={{ display: "flex", gap: 16, fontSize: 13, fontWeight: 500 }}>
+          <nav className="container" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0", gap: 12 }}>
+            <span style={{ fontFamily: "var(--font-display)", fontWeight: 400, fontSize: 15, letterSpacing: "0.12em", textTransform: "uppercase" }}>{eventConfig.coupleNames}</span>
+            <div style={{ display: "flex", gap: 16, fontFamily: "var(--font-ui)", fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 400 }}>
               <a href="#rsvp" style={{ textDecoration: "none" }}>RSVP</a>
               <a href="#wishes" style={{ textDecoration: "none" }}>Wishes</a>
               <a href="#location" style={{ textDecoration: "none" }}>Maps</a>
@@ -66,13 +66,13 @@ export default function App() {
         <RsvpForm />
         <Wishes />
 
-        <footer style={{ background: "#111", color: "white", padding: "40px 0", textAlign: "center" }}>
+        <footer style={{ background: "#2C3F4E", color: "white", padding: "44px 0", textAlign: "center" }}>
           <div className="container">
-            <p style={{ fontFamily: "var(--font-display)", fontSize: 28, margin: 0 }}>{eventConfig.coupleNames}</p>
-            <p style={{ margin: "8px 0 0", color: "rgb(255 255 255 / 70%)", fontSize: 13, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+            <p style={{ fontFamily: "var(--font-display)", fontSize: 26, margin: 0, letterSpacing: "0.06em", textTransform: "uppercase" }}>{eventConfig.coupleNames}</p>
+            <p className="script" style={{ margin: "6px 0 0", color: "rgba(255,255,255,0.85)", fontSize: 22 }}>
               Thank you for being part of our love story
             </p>
-            <p style={{ margin: "18px 0 0", fontSize: 12, color: "rgb(255 255 255 / 50%)" }}>
+            <p style={{ margin: "18px 0 0", fontFamily: "var(--font-ui)", fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.55)" }}>
               © 2026 Ricky & Felly. Crafted with love.
             </p>
           </div>
