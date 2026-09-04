@@ -17,10 +17,11 @@ export function Countdown() {
 
   return (
     <section id="countdown" style={{ background: "#323030", position: "relative", overflow: "hidden" }}>
-      {/* bg layer grayscale 41% */}
-      <div style={{ maxHeight: 400, overflow: "hidden" }}>
-        <img src="/assets/6.png" alt="" aria-hidden loading="lazy"
-          style={{ width: "100%", height: 315, objectFit: "cover", opacity: 0.41, filter: "grayscale(100%)" }} />
+      {/* bg layer 7.png + wrap hitam transparan agar teks tetap terbaca */}
+      <div style={{ maxHeight: 400, overflow: "hidden", position: "relative" }}>
+        <img src="/assets/7.png" alt="" aria-hidden loading="lazy"
+          style={{ width: "100%", height: 315, objectFit: "cover", filter: "grayscale(100%)" }} />
+        <div aria-hidden style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.45)" }} />
       </div>
       <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24, textAlign: "center" }}>
         <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 400, fontSize: 20, color: "#FEFEFE", margin: 0 }}>

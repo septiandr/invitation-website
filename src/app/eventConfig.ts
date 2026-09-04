@@ -102,7 +102,7 @@ export const eventConfig: EventConfig = {
     parents: "Putra dari Bapak Hendra Pratama & Ibu Maria Pratama",
     bio: "Seorang insinyur yang percaya cinta adalah komitmen harian. Melamar Fellycia di bawah langit Jakarta, Desember lalu.",
     image: "/assets/5.png",
-    instagram: "ricky.pratama",
+    instagram: "rickyy",
   },
   bride: {
     role: "Mempelai Wanita",
@@ -112,7 +112,7 @@ export const eventConfig: EventConfig = {
     parents: "Putri dari Bapak Anton Wijaya & Ibu Lina Wijaya",
     bio: "Desainer yang jatuh cinta pada tawa Ricky sejak 2019. Kini siap menua bersama dalam satu cerita.",
     image: "/assets/6.png",
-    instagram: "fellycia.angel",
+    instagram: "fellycia",
   },
   loveStory: [
     { year: "2019", title: "First Meet", description: "A simple meeting that turned into endless conversations.", image: "/assets/5.png" },

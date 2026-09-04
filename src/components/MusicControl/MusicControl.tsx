@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { eventConfig } from "../../app/eventConfig";
 
-export function MusicControl({ isOpened }: { isOpened: boolean }) {
+export function MusicControl({ isOpened, inBar }: { isOpened: boolean; inBar?: boolean }) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isAvailable, setIsAvailable] = useState(true);
@@ -25,7 +25,10 @@ export function MusicControl({ isOpened }: { isOpened: boolean }) {
     }
   }, []);
 
-  // sync state with audio events (attach once audio element exists)
+  // sync state with audio events (attach once; baca state terbaru via ref
+  // agar listener tidak perlu dipasang ulang)
+  const stateRef = useRef({ isOpened, hasInteracted });
+  stateRef.current = { isOpened, hasInteracted };
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -43,7 +46,8 @@ export function MusicControl({ isOpened }: { isOpened: boolean }) {
         a.src = FALLBACK_SRC;
         try {
           a.load();
-          if (isOpened || hasInteracted) a.play().catch((e) => console.warn("[music] fallback play failed:", e));
+          const s = stateRef.current;
+          if (s.isOpened || s.hasInteracted) a.play().catch((e) => console.warn("[music] fallback play failed:", e));
         } catch {
           /* ignore */
         }
@@ -60,18 +64,7 @@ export function MusicControl({ isOpened }: { isOpened: boolean }) {
       a.removeEventListener("pause", onPause);
       a.removeEventListener("error", onError);
     };
-  }, [isOpened, hasInteracted]);
-
-  // pause when tab hidden to be polite
-  useEffect(() => {
-    const onVis = () => {
-      if (document.hidden && isPlaying) {
-        // keep playing? policy: don't auto-pause, but user can toggle
-      }
-    };
-    document.addEventListener("visibilitychange", onVis);
-    return () => document.removeEventListener("visibilitychange", onVis);
-  }, [isPlaying]);
+  }, []);
 
   const toggle = async () => {
     const a = audioRef.current;
@@ -112,17 +105,22 @@ export function MusicControl({ isOpened }: { isOpened: boolean }) {
       />
       {!isOpened ? null : (
       <>
-      {/* Floating control — editorial pill */}
+      {/* Floating control — editorial pill (di dalam chrome-bar bila inBar) */}
       <div
-        style={{
-          position: "fixed",
-          left: 80,
-          bottom: 16,
-          zIndex: 50,
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-        }}
+        className={inBar ? "chrome-music" : undefined}
+        style={
+          inBar
+            ? undefined
+            : {
+                position: "fixed",
+                left: 80,
+                bottom: 16,
+                zIndex: 50,
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+              }
+        }
       >
         {!isAvailable ? (
           <span
@@ -204,7 +202,7 @@ export function MusicControl({ isOpened }: { isOpened: boolean }) {
 
             <span>{isPlaying ? "Music On" : "Music Off"}</span>
 
-            {/* subtle divider + hint */}
+            {/* subtle divider + hint (hint disembunyikan di layar sempit via CSS) */}
             <span
               aria-hidden
               style={{
@@ -213,7 +211,7 @@ export function MusicControl({ isOpened }: { isOpened: boolean }) {
                 background: isPlaying ? "rgb(255 255 255 / 20%)" : "var(--color-line)",
               }}
             />
-            <span aria-hidden style={{ fontSize: 11, opacity: 0.7 }}>
+            <span aria-hidden className="music-hint" style={{ fontSize: 11, opacity: 0.7 }}>
               {isPlaying ? "Tap to pause" : "Tap to play"}
             </span>
           </button>

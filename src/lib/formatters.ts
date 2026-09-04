@@ -14,14 +14,3 @@ export function getCountdown(targetIso: string) {
 
   return { isPast: false, days, hours, minutes, seconds };
 }
-
-export function formatDateLong(iso: string, tz: string) {
-  try {
-    return new Intl.DateTimeFormat("id-ID", {
-      dateStyle: "long",
-      timeZone: tz,
-    }).format(new Date(iso));
-  } catch {
-    return new Date(iso).toLocaleDateString("id-ID");
-  }
-}

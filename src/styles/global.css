@@ -165,6 +165,150 @@ button { font-family: inherit; }
 .error-box { background: #fef2f2; border: 1px solid #fecaca; padding: 14px; border-radius: 8px; color: #991b1b; font-family: var(--font-ui); font-size: 13px; }
 
 /* ------------------------------------------------------------------
+   Floating chrome: menu | spacer | music | bahasa dalam SATU bar.
+   - Bar tidak menelan tap konten (hanya tombol yang klikable).
+   - Aman dari home indicator (safe-area) dan tidak tabrakan di 320px.
+   - Di desktop menempel ke kolom undangan kanan (selebar .page-content).
+------------------------------------------------------------------- */
+.chrome-bar {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  bottom: max(12px, env(safe-area-inset-bottom, 0px));
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+  transition: transform 0.35s ease, opacity 0.35s ease;
+}
+.chrome-bar > * { pointer-events: auto; }
+/* sembunyi saat sampai ujung bawah agar footer tidak tertutup */
+.chrome-bar[data-hidden="true"] {
+  transform: translateY(150%);
+  opacity: 0;
+}
+.chrome-bar[data-hidden="true"] > * { pointer-events: none !important; }
+.chrome-spacer { flex: 1 1 auto; pointer-events: none !important; min-width: 4px; }
+
+.chrome-circle {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border-radius: 50%;
+  border: none;
+  background: #2C3F4E;
+  color: #fff;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(0,0,0,.3);
+  display: grid;
+  place-items: center;
+}
+.chrome-pill {
+  height: 44px;
+  flex: none;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0,0,0,.15);
+  white-space: nowrap;
+}
+.chrome-lang {
+  border: 1px solid var(--color-line);
+  background: #fff;
+  padding: 0 14px;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--color-ink);
+  gap: 6px;
+}
+.chrome-music { flex: none; min-width: 0; }
+.chrome-music > button { max-width: 46vw; overflow: hidden; }
+
+/* overlay + drawer navigasi (selalu di atas bar) */
+.chrome-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 69;
+  background: rgba(0,0,0,.45);
+}
+.chrome-drawer {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: min(85vw, 300px);
+  background: #2C3F4E;
+  padding: 16px 16px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+}
+.chrome-drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.chrome-drawer-title {
+  font-family: var(--font-display);
+  color: #FEFEFE;
+  font-size: 22px;
+  margin: 0;
+  text-align: right;
+  flex: 1;
+}
+.chrome-drawer-close {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,.4);
+  background: transparent;
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+}
+.chrome-drawer-item {
+  background: none;
+  border: none;
+  color: #FEFEFE;
+  text-align: right;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  padding: 10px 4px;
+  cursor: pointer;
+  min-height: 44px;
+}
+
+/* layar sangat sempit: rapatkan + sembunyikan hint musik */
+@media (max-width: 419px) {
+  .music-hint { display: none !important; }
+}
+@media (max-width: 359px) {
+  .chrome-bar { left: 8px; right: 8px; gap: 6px; }
+  .chrome-lang { padding: 0 10px; }
+}
+
+@media (min-width: 1200px) {
+  /* kunci ke kolom undangan kanan, sejajar .page-content */
+  .chrome-bar {
+    left: calc(100% - clamp(340px, 25vw, 480px) + 16px);
+    right: 16px;
+  }
+  .music-hint { display: inline !important; }
+}
+
+/* ------------------------------------------------------------------
    Tampilan desktop: banner foto 3/4 (kiri, tetap) + undangan digital 1/4 (kanan).
    Di bawah 1200px kembali ke kolom undangan terpusat seperti versi mobile.
 ------------------------------------------------------------------- */

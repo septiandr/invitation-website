@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { gsap } from "gsap";
 import { eventConfig } from "../../app/eventConfig";
 import { getLang, t } from "../../lib/i18n";
 
@@ -9,7 +10,18 @@ export function Gallery() {
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
   const touchX = useRef<number | null>(null);
+  const mainImgRef = useRef<HTMLImageElement>(null);
   const imgs = eventConfig.gallery.slice(0, 5);
+
+  // Transisi tiap ganti slide: fade + zoom-in halus pada gambar utama.
+  useEffect(() => {
+    if (!mainImgRef.current) return;
+    gsap.fromTo(
+      mainImgRef.current,
+      { opacity: 0, scale: 1.06 },
+      { opacity: 1, scale: 1, duration: 0.7, ease: "power3.out", overwrite: true, clearProps: "scale" }
+    );
+  }, [active]);
 
   // auto swipe — jeda saat hover/sentuh/tab hidden
   useEffect(() => {
@@ -55,7 +67,7 @@ export function Gallery() {
           }}
         >
           <div style={{ position: "relative", borderRadius: 16, overflow: "hidden" }}>
-            <img src={imgs[active].src} alt={imgs[active].alt}
+            <img ref={mainImgRef} key={imgs[active].src} src={imgs[active].src} alt={imgs[active].alt}
               style={{ width: "100%", height: 320, objectFit: "cover", borderRadius: 16, display: "block" }} />
             <button onClick={() => setActive((a) => (a - 1 + imgs.length) % imgs.length)} aria-label="Sebelumnya"
               style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", width: 36, height: 36, borderRadius: "50%", border: "none", background: "rgba(0,0,0,.45)", color: "#fff", fontSize: 18, cursor: "pointer" }}>‹</button>

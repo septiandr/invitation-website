@@ -4,7 +4,6 @@ import { eventConfig } from "../../app/eventConfig";
 import { getGuestName, getLang, t } from "../../lib/i18n";
 
 type Props = {
-  isOpened: boolean;
   onOpen: () => void;
 };
 
@@ -13,13 +12,15 @@ export function Cover({ onOpen }: Props) {
   const lang = getLang();
   const guestName = getGuestName(eventConfig.greetingName || "Keluarga & Teman-teman");
 
-  // Transisi pembuka: tulisan muncul perlahan (fade + rise + blur) berurutan,
-  // dimulai dari atas ke bawah.
+  // Transisi pembuka: background zoom-out halus + tulisan muncul
+  // berurutan (fade + rise + blur) dari atas ke bawah.
   useLayoutEffect(() => {
     const ctx = gsap.context(() => {
       gsap.set(".cover-anim", { opacity: 0, y: 26, filter: "blur(6px)" });
+      gsap.set(".cover-bg", { scale: 1.15, opacity: 0 });
       const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
-      tl.to(".cover-anim", { opacity: 1, y: 0, filter: "blur(0px)", duration: 1.5, stagger: 0.2 }, 0.25)
+      tl.to(".cover-bg", { scale: 1, opacity: 1, duration: 2.2, ease: "power2.out" }, 0)
+        .to(".cover-anim", { opacity: 1, y: 0, filter: "blur(0px)", duration: 1.5, stagger: 0.2 }, 0.25)
         .to(".cover-scroll-cue", { opacity: 1, duration: 0.9 }, 1.9);
     }, rootRef);
     return () => ctx.revert();
@@ -40,6 +41,7 @@ export function Cover({ onOpen }: Props) {
         src="/assets/1.png"
         alt=""
         aria-hidden
+        className="cover-bg"
         style={{
           position: "absolute",
           inset: 0,
