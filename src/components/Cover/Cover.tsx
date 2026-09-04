@@ -84,7 +84,7 @@ export function Cover({ isOpened, onOpen }: Props) {
 
         <p
           style={{
-            margin: 0,
+            margin: "16px 0 0",
             fontSize: "12px",
             letterSpacing: "0.14em",
             textTransform: "uppercase",
