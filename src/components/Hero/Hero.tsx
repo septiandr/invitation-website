@@ -45,10 +45,10 @@ export function Hero() {
             }}
           >
             <img
-              src="/assets/1.png"
+              src="/assets/2.png"
               alt="Portrait of Ricky & Felly"
               loading="eager"
-              style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "50% 20%" }}
+              style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "50% 25%" }}
             />
           </figure>
           <p style={{ fontFamily: "var(--font-body)", fontStyle: "italic", color: "var(--color-muted)", margin: 0, fontSize: 16, maxWidth: "48ch" }}>

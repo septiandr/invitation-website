@@ -19,9 +19,8 @@ export function Cover({ isOpened, onOpen }: Props) {
       }}
     >
       <img
-        src="/assets/background.jpg"
-        alt=""
-        aria-hidden
+        src="/assets/1.png"
+        alt="Foto mempelai Ricky & Felly"
         fetchPriority="high"
         style={{
           position: "absolute",
@@ -29,7 +28,7 @@ export function Cover({ isOpened, onOpen }: Props) {
           width: "100%",
           height: "100%",
           objectFit: "cover",
-          objectPosition: "50% 30%",
+          objectPosition: "50% 20%",
           animation: "kenburns 1.8s cubic-bezier(0.22,1,0.36,1) forwards",
         }}
       />
