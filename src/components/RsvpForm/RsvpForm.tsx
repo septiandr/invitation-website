@@ -1,12 +1,9 @@
 import { useState } from "react";
 import { rsvpClientSchema } from "../../lib/validation";
 import { apiClient, getApiErrorFields, getApiErrorMessage } from "../../lib/apiClient";
-import { useReveal } from "../../hooks/useReveal";
-
 type Status = "idle" | "loading" | "success" | "error";
 
 export function RsvpForm() {
-  const { ref, visible } = useReveal<HTMLDivElement>();
   const [guestName, setGuestName] = useState("");
   const [attendance, setAttendance] = useState<"HADIR" | "TIDAK_HADIR">("HADIR");
   const [guestCount, setGuestCount] = useState(2);
@@ -52,7 +49,7 @@ export function RsvpForm() {
   };
 
   return (
-    <section ref={ref} id="rsvp" className={visible ? "reveal in" : "reveal"} style={{ background: "var(--color-paper)" }}>
+    <section id="rsvp" style={{ background: "var(--color-paper)" }}>
       <div className="container section-pad" style={{ maxWidth: 720 }}>
         <div style={{ textAlign: "center", marginBottom: 28 }}>
           <p className="kicker">RSVP</p>

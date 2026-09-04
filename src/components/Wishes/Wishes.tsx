@@ -2,12 +2,10 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { wishClientSchema } from "../../lib/validation";
 import { apiClient, getApiErrorFields, getApiErrorMessage } from "../../lib/apiClient";
 import type { Wish } from "../../types";
-import { useReveal } from "../../hooks/useReveal";
 
 type LoadStatus = "idle" | "loading" | "success" | "error";
 
 export function Wishes() {
-  const { ref: revealRef, visible } = useReveal<HTMLDivElement>(0.1);
   const [items, setItems] = useState<Wish[]>([]);
   const [loadStatus, setLoadStatus] = useState<LoadStatus>("idle");
   const [loadError, setLoadError] = useState("");
@@ -84,7 +82,7 @@ export function Wishes() {
   };
 
   return (
-    <section ref={revealRef} id="wishes" className={visible ? "reveal in" : "reveal"} style={{ background: "var(--color-paper)" }}>
+    <section id="wishes" style={{ background: "var(--color-paper)" }}>
       <div className="container section-pad">
         <div style={{ textAlign: "center", marginBottom: 28 }}>
           <p className="kicker">Wishes</p>
