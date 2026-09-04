@@ -55,8 +55,6 @@ export function Gallery() {
           }}
         >
           <div style={{ position: "relative", borderRadius: 16, overflow: "hidden" }}>
-            {/* Tanpa key agar node <img> stabil: GSAP tetap bisa menganimasikan
-                elemen yang sama meski src berganti tiap slide (auto swipe). */}
             <img src={imgs[active].src} alt={imgs[active].alt}
               style={{ width: "100%", height: 320, objectFit: "cover", borderRadius: 16, display: "block" }} />
             <button onClick={() => setActive((a) => (a - 1 + imgs.length) % imgs.length)} aria-label="Sebelumnya"
@@ -67,7 +65,7 @@ export function Gallery() {
           {/* progress dots */}
           <div style={{ display: "flex", gap: 6, justifyContent: "center", marginTop: 10 }}>
             {imgs.map((g, i) => (
-              <span key={g.src} style={{ width: i === active ? 20 : 8, height: 8, borderRadius: 999, background: i === active ? "#2C3F4E" : "rgba(44,63,78,.25)", transition: "width .3s" }} />
+              <span key={g.src} style={{ width: i === active ? 20 : 8, height: 8, borderRadius: 999, background: i === active ? "#2C3F4E" : "rgba(44,63,78,.25)" }} />
             ))}
           </div>
           <div style={{ display: "flex", gap: 8, justifyContent: "center", marginTop: 10, flexWrap: "wrap" }}>

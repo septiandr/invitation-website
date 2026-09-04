@@ -13,29 +13,20 @@ export function Cover({ onOpen }: Props) {
   const lang = getLang();
   const guestName = getGuestName(eventConfig.greetingName || "Keluarga & Teman-teman");
 
+  // Transisi pembuka: tulisan muncul perlahan (fade + rise + blur) berurutan,
+  // dimulai dari atas ke bawah.
   useLayoutEffect(() => {
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduce) {
-      gsap.set(".cover-anim", { opacity: 1, y: 0, filter: "blur(0px)" });
-      return;
-    }
     const ctx = gsap.context(() => {
-      gsap.set(".cover-anim", { opacity: 0, y: 28, filter: "blur(6px)" });
-      gsap.set(".cover-bg", { scale: 1.08 });
+      gsap.set(".cover-anim", { opacity: 0, y: 26, filter: "blur(6px)" });
       const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
-      tl.to(".cover-bg", { scale: 1, duration: 1.8, ease: "power2.out" }, 0)
-        .to(".cover-anim", { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.85, stagger: 0.09 }, 0.18)
-        .to(".cover-line", { scaleX: 1, duration: 0.6, ease: "power2.out" }, 0.62)
-        .to(".cover-scroll-cue", { opacity: 1, y: 0, duration: 0.6 }, 1.15);
-      gsap.to(".cover-cta", { y: -6, duration: 1.4, repeat: -1, yoyo: true, ease: "sine.inOut", delay: 1.6 });
+      tl.to(".cover-anim", { opacity: 1, y: 0, filter: "blur(0px)", duration: 1.5, stagger: 0.2 }, 0.25)
+        .to(".cover-scroll-cue", { opacity: 1, duration: 0.9 }, 1.9);
     }, rootRef);
     return () => ctx.revert();
   }, []);
 
   return (
-    <section
-      ref={rootRef}
-      aria-label="Cover undangan"
+    <section ref={rootRef} aria-label="Cover undangan"
       style={{
         position: "relative",
         height: "100svh",
@@ -46,8 +37,7 @@ export function Cover({ onOpen }: Props) {
       }}
     >
       <img
-        className="cover-bg"
-        src="/assets/background.jpg"
+        src="/assets/1.png"
         alt=""
         aria-hidden
         style={{
@@ -56,8 +46,7 @@ export function Cover({ onOpen }: Props) {
           width: "100%",
           height: "100%",
           objectFit: "cover",
-          objectPosition: "50% 30%",
-          willChange: "transform",
+          objectPosition: "50% 50%",
         }}
       />
       {/* dark overlay rgb(50 48 48 / 20%) like original */}
@@ -87,12 +76,12 @@ export function Cover({ onOpen }: Props) {
           padding: "56px 0 40px",
         }}
       >
-        <p className="cover-anim kicker" style={{ color: "rgba(255,255,255,0.92)", margin: 0, letterSpacing: "0.28em", fontSize: "10px" }}>
+        <p className="kicker cover-anim" style={{ color: "rgba(255,255,255,0.92)", margin: 0, letterSpacing: "0.28em", fontSize: "10px" }}>
           {t(lang, "The Wedding of", "The Wedding of")}
         </p>
 
         {/* signature lockup: 30px Marcellus + Boheme Floral "and" */}
-        <div className="cover-anim" style={{ marginTop: "17dvh", lineHeight: 1.1 }}>
+        <div className="cover-anim" style={{ marginTop: "4dvh", lineHeight: 1.1 }}>
           <div style={{ fontFamily: "var(--font-display)", fontSize: 30, letterSpacing: "0.06em", color: "#FEFEFE" }}>
             Ricky
           </div>
@@ -115,10 +104,10 @@ export function Cover({ onOpen }: Props) {
           <p style={{ margin: "4px 0 0", fontFamily: "var(--font-display)", fontSize: 22, color: "#fff" }}>{guestName}</p>
         </div>
 
-        <button onClick={onOpen} className="cover-anim cover-cta btn btn-ghost animation-up-and-down" style={{ marginTop: 24, minWidth: 220, minHeight: 38, fontSize: 12, letterSpacing: "0.14em", borderRadius: 25 }} aria-label="Buka undangan">
+        <button onClick={onOpen} className="cover-anim btn btn-ghost" style={{ marginTop: 24, minWidth: 220, minHeight: 38, fontSize: 12, letterSpacing: "0.14em", borderRadius: 25 }} aria-label="Buka undangan">
           {t(lang, "Buka Undangan", "Let's Begin")} ↓
         </button>
-        <div className="cover-scroll-cue cover-anim" aria-hidden style={{ marginTop: 18, opacity: 0 }}>
+        <div className="cover-scroll-cue" aria-hidden style={{ marginTop: 18, opacity: 0 }}>
           <small style={{ fontFamily: "var(--font-ui)", fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.7)" }}>
             20 • 12 • 2026 — Jakarta
           </small>

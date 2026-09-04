@@ -161,7 +161,6 @@ export function MusicControl({ isOpened }: { isOpened: boolean }) {
               fontSize: 13,
               fontWeight: 600,
               letterSpacing: "0.04em",
-              transition: "background 200ms, color 200ms, transform 150ms",
             }}
             onKeyDown={(e) => {
               if (e.key === " ") e.preventDefault();
@@ -201,19 +200,6 @@ export function MusicControl({ isOpened }: { isOpened: boolean }) {
                   }}
                 />
               )}
-              {/* pulse ring when playing */}
-              {isPlaying && (
-                <span
-                  aria-hidden
-                  style={{
-                    position: "absolute",
-                    inset: -4,
-                    borderRadius: "50%",
-                    border: "1px solid rgb(255 255 255 / 60%)",
-                    animation: "pulse 1.8s ease-out infinite",
-                  }}
-                />
-              )}
             </span>
 
             <span>{isPlaying ? "Music On" : "Music Off"}</span>
@@ -239,15 +225,6 @@ export function MusicControl({ isOpened }: { isOpened: boolean }) {
         {hasInteracted ? (isPlaying ? "Musik diputar" : "Musik dijeda") : ""}
       </span>
 
-      <style>{`
-        @keyframes pulse {
-          0% { transform: scale(1); opacity: 0.8; }
-          100% { transform: scale(1.35); opacity: 0; }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          span[style*="animation: pulse"] { animation: none !important; }
-        }
-      `}</style>
       </>
       )}
     </>

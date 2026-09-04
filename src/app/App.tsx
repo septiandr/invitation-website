@@ -1,7 +1,4 @@
 import { useState, useEffect, useCallback } from "react";
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { ScrollToPlugin } from "gsap/ScrollToPlugin";
 import { Cover } from "../components/Cover/Cover";
 import { Hero } from "../components/Hero/Hero";
 import { DesktopBanner } from "../components/DesktopBanner/DesktopBanner";
@@ -15,8 +12,6 @@ import { Wishes } from "../components/Wishes/Wishes";
 import { MusicControl } from "../components/MusicControl/MusicControl";
 import { OpeningQuote, CoupleProfile, LoveStory, WeddingGift, GuestQr, Closing } from "../components/InvitationSections";
 import { getLang, setLang, t } from "../lib/i18n";
-
-gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
 
 const NAV = [
   { id: "couple", idLabel: "Mempelai", enLabel: "Couple" },
@@ -105,148 +100,13 @@ export default function App() {
     return () => { document.body.style.overflow = ""; };
   }, [isOpened]);
 
-  // Semua animasi teks/media/kartu memakai GSAP + ScrollTrigger:
-  // 1) Entrance setiap kali section masuk viewport (teks: blur + rise,
-  //    media: zoom-in, kartu: tilt 3D) — terulang tiap re-enter, bukan sekali.
-  // 2) Parallax halus yPercent pada teks yang mengikuti scroll, jadi
-  //    teks terus “bergerak” selama halaman digulir.
-  useEffect(() => {
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduceMotion) return; // konten statis & terlihat penuh tanpa tween
-
-    const ownsText = (el: Element) =>
-      Array.from(el.childNodes).some((n) => n.nodeType === Node.TEXT_NODE && (n.textContent ?? "").trim().length > 0);
-    const isMedia = (el: Element) => ["IMG", "IFRAME", "VIDEO"].includes(el.tagName);
-    const isSkippable = (el: Element) =>
-      ["SCRIPT", "STYLE", "SVG", "PATH", "USE"].includes(el.tagName) ||
-      (el.tagName !== "FORM" && el.closest("form")) ||
-      (!isMedia(el) && el.getAttribute("aria-hidden") === "true");
-
-    // Judul vs. paragraf dibedakan agar parallax-nya punya kecepatan berbeda (kedalaman).
-    const isHeading = (el: Element) =>
-      /^H[1-6]$/.test(el.tagName) ||
-      el.classList.contains("kicker") ||
-      el.classList.contains("display") ||
-      el.classList.contains("script") ||
-      el.tagName === "STRONG" ||
-      el.tagName === "BLOCKQUOTE" ||
-      el.tagName === "CITE";
-
-    // Kumpulkan target per section: teks (judul/paragraf/tombol), media (img/iframe/video),
-    // dan kartu (form, article, .stagger > *) yang beranimasi sebagai satu unit.
-    const collect = (root: HTMLElement) => {
-      const headingEls: HTMLElement[] = [];
-      const paraEls: HTMLElement[] = [];
-      const mediaEls: HTMLElement[] = [];
-      const cardEls = new Set<HTMLElement>();
-      root.querySelectorAll<HTMLElement>("form").forEach((f) => cardEls.add(f));
-      root.querySelectorAll<HTMLElement>("article").forEach((a) => {
-        if (!a.classList.contains("stagger")) cardEls.add(a);
-      });
-      root.querySelectorAll<HTMLElement>(".stagger > *").forEach((c) => cardEls.add(c));
-
-      root.querySelectorAll<HTMLElement>("*").forEach((el) => {
-        if (isSkippable(el)) return;
-        if ([...cardEls].some((c) => c !== el && c.contains(el))) return; // isi kartu ikut kartunya
-        if (isMedia(el)) mediaEls.push(el);
-        else if (ownsText(el) || ((el.tagName === "A" || el.tagName === "BUTTON") && el.textContent?.trim())) {
-          (isHeading(el) ? headingEls : paraEls).push(el);
-        }
-      });
-      return { textEls: [...headingEls, ...paraEls], headingEls, paraEls, mediaEls, cardEls: [...cardEls] };
-    };
-
-    // Stagger menyesuaikan jumlah target: daftar panjang tetap ringkas (< 0.7s spread).
-    const staggerFor = (n: number, base: number, max: number) => (n > 0 ? Math.min(base, max / n) : 0);
-
-    const onLoad = () => ScrollTrigger.refresh();
-    window.addEventListener("load", onLoad);
-    const ctx = gsap.context(() => {
-      const roots = gsap.utils.toArray<HTMLElement>(".page-content section, .page-content footer, .desktop-banner");
-
-      // Entrance — play saat section masuk viewport, reverse saat keluar,
-      // sehingga animasi terulang setiap kali section masuk kembali.
-      roots.forEach((root) => {
-        const { textEls, mediaEls, cardEls } = collect(root);
-        if (textEls.length) {
-          gsap.fromTo(
-            textEls,
-            { y: 36, opacity: 0, filter: "blur(6px)" },
-            {
-              y: 0, opacity: 1, filter: "blur(0px)",
-              duration: 0.9, ease: "power3.out",
-              stagger: staggerFor(textEls.length, 0.08, 0.7),
-              scrollTrigger: { trigger: root, start: "top 80%", toggleActions: "play none none reverse" },
-            }
-          );
-        }
-        if (mediaEls.length) {
-          gsap.fromTo(
-            mediaEls,
-            { y: 30, scale: 1.08, opacity: 0 },
-            {
-              y: 0, scale: 1, opacity: 1,
-              duration: 1.1, ease: "power3.out",
-              stagger: staggerFor(mediaEls.length, 0.12, 0.6),
-              scrollTrigger: { trigger: root, start: "top 74%", toggleActions: "play none none reverse" },
-            }
-          );
-        }
-        if (cardEls.length) {
-          gsap.fromTo(
-            cardEls,
-            { y: 30, rotateX: 5, transformPerspective: 600, opacity: 0 },
-            {
-              y: 0, rotateX: 0, opacity: 1,
-              duration: 0.85, ease: "power3.out",
-              stagger: staggerFor(cardEls.length, 0.1, 0.6),
-              scrollTrigger: { trigger: root, start: "top 72%", toggleActions: "play none none reverse" },
-            }
-          );
-        }
-      });
-
-      // Parallax teks mengikuti scroll: yPercent berkomposisi dengan `y` entrance,
-      // jadi tidak saling menimpa — teks bergeser halus selama section melintasi viewport.
-      // Judul bergerak lebih cepat dari paragraf agar terasa berlapis (kedalaman).
-      roots.forEach((root) => {
-        if (root.classList.contains("desktop-banner")) return; // fixed — selalu di viewport
-        const { headingEls, paraEls } = collect(root);
-        if (headingEls.length) {
-          gsap.fromTo(
-            headingEls,
-            { yPercent: -18 },
-            {
-              yPercent: 18, ease: "none",
-              scrollTrigger: { trigger: root, start: "top bottom", end: "bottom top", scrub: 1 },
-            }
-          );
-        }
-        if (paraEls.length) {
-          gsap.fromTo(
-            paraEls,
-            { yPercent: -9 },
-            {
-              yPercent: 9, ease: "none",
-              scrollTrigger: { trigger: root, start: "top bottom", end: "bottom top", scrub: 1 },
-            }
-          );
-        }
-      });
-    });
-
-    return () => {
-      window.removeEventListener("load", onLoad);
-      ctx.revert();
-    };
-  }, []);
-
   useEffect(() => {
     if (!isOpened) return;
     // Alur buka: cover adalah “layar pertama” dalam alur dokumen (100svh).
-    // Klik → halaman benar-benar di-scroll halus ke bawah ke konten undangan
-    // (scrollbar bergerak) via GSAP ScrollToPlugin — tween per-frame jadi
-    // mulus di semua browser, tidak bergantung dukungan smooth-scroll asli.
+    // Klik → halaman di-scroll halus ke bawah ke konten undangan, lalu cover
+    // disembunyikan. Penghapusan cover menggeser konten naik setinggi cover;
+    // kompensasi langsung dengan scroll ke posisi 0 agar tampilan tidak
+    // berubah mendadak.
     const coverEl = document.querySelector<HTMLElement>(".cover-layer");
     const hero = document.getElementById("hero");
     if (!coverEl || !hero) return;
@@ -261,28 +121,22 @@ export default function App() {
     const hideCover = () => {
       if (finished) return;
       finished = true;
-      gsap.set(".cover-layer", { display: "none" });
-      // Penghapusan cover menggeser konten naik setinggi cover; kompensasi
-      // langsung di frame yang sama agar tampilan tidak berubah mendadak.
+      coverEl.style.display = "none";
       html.style.scrollBehavior = "auto";
       window.scrollTo(0, 0);
       html.style.scrollBehavior = prevScrollBehavior;
-      ScrollTrigger.refresh();
     };
 
-    // Matikan sementara CSS scroll-behavior:smooth agar tween per-frame 1:1
-    // (kalau tetap smooth, setiap langkah malah memicu scroll asli yang tertunda).
-    // Pengguna dengan prefers-reduced-motion tetap mendapat scroll (permintaan
-    // klien), hanya lebih pendek & sederhana agar geraknya tidak berlebihan.
     html.style.scrollBehavior = "auto";
-    gsap.to(window, {
-      scrollTo: { y: target, autoKill: true },
-      duration: reduce ? 0.6 : 1.15,
-      ease: reduce ? "power1.inOut" : "power2.inOut",
-      onComplete: hideCover,
-      // Pengguna menyela scroll → hentikan & langsung selesaikan tanpa macet.
-      onInterrupt: hideCover,
-    });
+    window.scrollTo({ top: target, behavior: reduce ? "auto" : "smooth" });
+    if (reduce) {
+      hideCover();
+    } else {
+      // `scrollend` memberi tahu kapan scroll halus selesai; fallback timer
+      // untuk browser lama / scroll yang disela.
+      window.addEventListener("scrollend", hideCover, { once: true });
+      window.setTimeout(hideCover, 1200);
+    }
   }, [isOpened]);
 
   return (
