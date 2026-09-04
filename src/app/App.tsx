@@ -105,41 +105,140 @@ export default function App() {
     return () => { document.body.style.overflow = ""; };
   }, [isOpened]);
 
+  // Semua animasi teks/media/kartu memakai GSAP + ScrollTrigger:
+  // 1) Entrance setiap kali section masuk viewport (teks: blur + rise,
+  //    media: zoom-in, kartu: tilt 3D) — terulang tiap re-enter, bukan sekali.
+  // 2) Parallax halus yPercent pada teks yang mengikuti scroll, jadi
+  //    teks terus “bergerak” selama halaman digulir.
   useEffect(() => {
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduceMotion) return; // konten statis & terlihat penuh tanpa tween
+
+    const ownsText = (el: Element) =>
+      Array.from(el.childNodes).some((n) => n.nodeType === Node.TEXT_NODE && (n.textContent ?? "").trim().length > 0);
+    const isMedia = (el: Element) => ["IMG", "IFRAME", "VIDEO"].includes(el.tagName);
+    const isSkippable = (el: Element) =>
+      ["SCRIPT", "STYLE", "SVG", "PATH", "USE"].includes(el.tagName) ||
+      (el.tagName !== "FORM" && el.closest("form")) ||
+      (!isMedia(el) && el.getAttribute("aria-hidden") === "true");
+
+    // Judul vs. paragraf dibedakan agar parallax-nya punya kecepatan berbeda (kedalaman).
+    const isHeading = (el: Element) =>
+      /^H[1-6]$/.test(el.tagName) ||
+      el.classList.contains("kicker") ||
+      el.classList.contains("display") ||
+      el.classList.contains("script") ||
+      el.tagName === "STRONG" ||
+      el.tagName === "BLOCKQUOTE" ||
+      el.tagName === "CITE";
+
+    // Kumpulkan target per section: teks (judul/paragraf/tombol), media (img/iframe/video),
+    // dan kartu (form, article, .stagger > *) yang beranimasi sebagai satu unit.
+    const collect = (root: HTMLElement) => {
+      const headingEls: HTMLElement[] = [];
+      const paraEls: HTMLElement[] = [];
+      const mediaEls: HTMLElement[] = [];
+      const cardEls = new Set<HTMLElement>();
+      root.querySelectorAll<HTMLElement>("form").forEach((f) => cardEls.add(f));
+      root.querySelectorAll<HTMLElement>("article").forEach((a) => {
+        if (!a.classList.contains("stagger")) cardEls.add(a);
+      });
+      root.querySelectorAll<HTMLElement>(".stagger > *").forEach((c) => cardEls.add(c));
+
+      root.querySelectorAll<HTMLElement>("*").forEach((el) => {
+        if (isSkippable(el)) return;
+        if ([...cardEls].some((c) => c !== el && c.contains(el))) return; // isi kartu ikut kartunya
+        if (isMedia(el)) mediaEls.push(el);
+        else if (ownsText(el) || ((el.tagName === "A" || el.tagName === "BUTTON") && el.textContent?.trim())) {
+          (isHeading(el) ? headingEls : paraEls).push(el);
+        }
+      });
+      return { textEls: [...headingEls, ...paraEls], headingEls, paraEls, mediaEls, cardEls: [...cardEls] };
+    };
+
+    // Stagger menyesuaikan jumlah target: daftar panjang tetap ringkas (< 0.7s spread).
+    const staggerFor = (n: number, base: number, max: number) => (n > 0 ? Math.min(base, max / n) : 0);
+
+    const onLoad = () => ScrollTrigger.refresh();
+    window.addEventListener("load", onLoad);
     const ctx = gsap.context(() => {
-      if (reduceMotion) return;
-      // Hanya animasikan anak .stagger (bukan article pembungkusnya) agar tidak double-hidden.
-      // immediateRender:false agar konten tetap terlihat kalau trigger belum aktif / gagal refresh.
-      gsap.utils.toArray<HTMLElement>(".page-content section").forEach((section) => {
-        const heading = section.querySelectorAll(".kicker, h2, h3");
-        const media = section.querySelectorAll("img, iframe");
-        const cards = section.querySelectorAll(".stagger > *, form");
-        if (heading.length) {
-          gsap.fromTo(heading, { opacity: 0, y: 35, filter: "blur(6px)" }, {
-            opacity: 1, y: 0, filter: "blur(0px)", duration: 0.9, stagger: 0.1, immediateRender: false,
-            scrollTrigger: { trigger: section, start: "top 88%", once: true },
-          });
+      const roots = gsap.utils.toArray<HTMLElement>(".page-content section, .page-content footer, .desktop-banner");
+
+      // Entrance — play saat section masuk viewport, reverse saat keluar,
+      // sehingga animasi terulang setiap kali section masuk kembali.
+      roots.forEach((root) => {
+        const { textEls, mediaEls, cardEls } = collect(root);
+        if (textEls.length) {
+          gsap.fromTo(
+            textEls,
+            { y: 36, opacity: 0, filter: "blur(6px)" },
+            {
+              y: 0, opacity: 1, filter: "blur(0px)",
+              duration: 0.9, ease: "power3.out",
+              stagger: staggerFor(textEls.length, 0.08, 0.7),
+              scrollTrigger: { trigger: root, start: "top 80%", toggleActions: "play none none reverse" },
+            }
+          );
         }
-        if (media.length) {
-          gsap.fromTo(media, { opacity: 0, scale: 1.06, y: 24 }, {
-            opacity: 1, scale: 1, y: 0, duration: 1.1, ease: "power3.out", stagger: 0.1, immediateRender: false,
-            scrollTrigger: { trigger: section, start: "top 85%", once: true },
-          });
+        if (mediaEls.length) {
+          gsap.fromTo(
+            mediaEls,
+            { y: 30, scale: 1.08, opacity: 0 },
+            {
+              y: 0, scale: 1, opacity: 1,
+              duration: 1.1, ease: "power3.out",
+              stagger: staggerFor(mediaEls.length, 0.12, 0.6),
+              scrollTrigger: { trigger: root, start: "top 74%", toggleActions: "play none none reverse" },
+            }
+          );
         }
-        if (cards.length) {
-          gsap.fromTo(cards, { opacity: 0, y: 28 }, {
-            opacity: 1, y: 0, duration: 0.8, ease: "power3.out", stagger: 0.08, immediateRender: false,
-            scrollTrigger: { trigger: section, start: "top 85%", once: true },
-          });
+        if (cardEls.length) {
+          gsap.fromTo(
+            cardEls,
+            { y: 30, rotateX: 5, transformPerspective: 600, opacity: 0 },
+            {
+              y: 0, rotateX: 0, opacity: 1,
+              duration: 0.85, ease: "power3.out",
+              stagger: staggerFor(cardEls.length, 0.1, 0.6),
+              scrollTrigger: { trigger: root, start: "top 72%", toggleActions: "play none none reverse" },
+            }
+          );
+        }
+      });
+
+      // Parallax teks mengikuti scroll: yPercent berkomposisi dengan `y` entrance,
+      // jadi tidak saling menimpa — teks bergeser halus selama section melintasi viewport.
+      // Judul bergerak lebih cepat dari paragraf agar terasa berlapis (kedalaman).
+      roots.forEach((root) => {
+        if (root.classList.contains("desktop-banner")) return; // fixed — selalu di viewport
+        const { headingEls, paraEls } = collect(root);
+        if (headingEls.length) {
+          gsap.fromTo(
+            headingEls,
+            { yPercent: -18 },
+            {
+              yPercent: 18, ease: "none",
+              scrollTrigger: { trigger: root, start: "top bottom", end: "bottom top", scrub: 1 },
+            }
+          );
+        }
+        if (paraEls.length) {
+          gsap.fromTo(
+            paraEls,
+            { yPercent: -9 },
+            {
+              yPercent: 9, ease: "none",
+              scrollTrigger: { trigger: root, start: "top bottom", end: "bottom top", scrub: 1 },
+            }
+          );
         }
       });
     });
-    // Refresh posisi trigger setelah font/gambar/cover berubah agar section tidak stuck opacity:0
-    const refresh = () => ScrollTrigger.refresh();
-    window.addEventListener("load", refresh);
-    const t = setTimeout(refresh, 800);
-    return () => { window.removeEventListener("load", refresh); clearTimeout(t); ctx.revert(); };
+
+    return () => {
+      window.removeEventListener("load", onLoad);
+      ctx.revert();
+    };
   }, []);
 
   useEffect(() => {

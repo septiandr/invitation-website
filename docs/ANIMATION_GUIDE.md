@@ -64,11 +64,15 @@ Setiap `section` di `.page-content` (skip index 0 = Hero) dapat 3 tween paralel:
 | Target | From | To | ScrollTrigger |
 |---|---|---|---|
 | `section` bg | `bgPos 50% 0%` | `50% 12%` | `scrub:1`, `start top bottom → end bottom top` |
-| Headings `(.kicker,h2,h3)` | `y 35, blur 6px, opacity 0` | `y 0, blur 0, opacity 1` | `start top 78%`, `once:true`, stagger 0.1, 0.9s |
+| Headings `(.kicker,h2,h3)` | `y 35, blur 6px, opacity 0` | `y 0, blur 0, opacity 1` | `start top 78%`, `toggleActions play none none reverse`, stagger 0.1, 0.9s |
 | Media `img,iframe` | `scale 1.08, y 28, opacity 0` | `scale 1, y 0, opacity 1` | `start top 72%`, stagger 0.12, 1.2s `power3.out` |
 | Cards `(.stagger > *, form, article)` | `y 30, rotateX 5, opacity 0` | `y 0, rotateX 0, opacity 1` | `start top 68%`, stagger 0.1, 0.8s |
 
 **Efek**: headings blur-in, gambar zoom-out, kartu 3D tilt subtle.
+
+**Scroll-linked text parallax**: selain entrance, teks di setiap `section` mendapat tween `yPercent` dengan `scrub: 1` (`trigger: section, start "top bottom", end "bottom top"`). Judul (`h1-h6`, `.kicker`, `.display`, `.script`, `strong`, `blockquote`, `cite`) bergerak lebih cepat: `yPercent -18 → 18`; paragraf/body lebih lambat: `-9 → 9` — agar terasa berlapis. `yPercent` berkomposisi dengan `y` entrance (komponen transform terpisah), jadi teks terus bergeser halus selama halaman digulir — tanpa konflik tween. Dikecualikan: `.desktop-banner` (fixed, selalu di viewport).
+
+> **Catatan implementasi**: target dihitung per `section` di `App.tsx` — teks (elemen yang punya text node, `a`, `button`), media (`img/iframe/video`), dan kartu (`form`, `article`, `.stagger > *`) yang beranimasi sebagai satu unit (isi kartu tidak dianimasi terpisah). Stagger menyesuaikan jumlah target (`Math.min(base, 0.7/n)`) agar daftar panjang (mis. wishes) tetap ringkas. Tidak ada lagi `IntersectionObserver`/class CSS `scroll-reveal` — semua `fromTo` via `ScrollTrigger` dengan `toggleActions: "play none none reverse"`, jadi entrance **terulang setiap kali** section masuk kembali ke viewport (bukan sekali).
 
 ### Peta ke Section:
 
@@ -119,7 +123,7 @@ Memudar saat discroll ke ujung.
 - Easing utama: `power3.out` (entrance), `power4.inOut` (cover exit), `power2.out` (ken burns), `sine.inOut` (float), `none` (scrub).
 - Stagger global: headings 0.1, media 0.12, cards 0.1.
 - Viewport trigger: `top 78% / 72% / 68%` (heading/media/cards) agar berurutan.
-- `once:true` → animasi sekali, tidak re-trigger.
+- `toggleActions: "play none none reverse"` → entrance terulang tiap section masuk viewport, reverse saat keluar (bukan sekali).
 
 ## Menambah / Edit Animasi
 

@@ -30,11 +30,11 @@ export function Gallery() {
       </svg>
       <div style={{ maxWidth: 430, margin: "0 auto", position: "relative" }}>
         <p style={{ fontFamily: "var(--font-display)", fontSize: 19, color: "#2C3F4E", margin: 0 }}>A PORTRAIT OF</p>
-        <div style={{ marginTop: 6, lineHeight: 1.1 }}>
+        <h2 style={{ margin: "6px 0 0", lineHeight: 1.1, fontWeight: 400 }}>
           <span style={{ fontFamily: "var(--font-display)", fontSize: 30, color: "#2C3F4E" }}>Ricky</span>{" "}
           <span style={{ fontFamily: "var(--font-script)", fontSize: 40, color: "#2C3F4E" }}>and</span>{" "}
           <span style={{ fontFamily: "var(--font-display)", fontSize: 30, color: "#2C3F4E" }}>Fellycia</span>
-        </div>
+        </h2>
         <p style={{ fontFamily: "var(--font-body)", fontSize: 19, color: "#2C3F4E", margin: "12px 0 0" }}>
           “{t(lang, "Setiap momen bersamamu adalah anugerah.", "Every moment with you is a blessing.")}”
         </p>
@@ -55,7 +55,9 @@ export function Gallery() {
           }}
         >
           <div style={{ position: "relative", borderRadius: 16, overflow: "hidden" }}>
-            <img key={imgs[active].src} src={imgs[active].src} alt={imgs[active].alt}
+            {/* Tanpa key agar node <img> stabil: GSAP tetap bisa menganimasikan
+                elemen yang sama meski src berganti tiap slide (auto swipe). */}
+            <img src={imgs[active].src} alt={imgs[active].alt}
               style={{ width: "100%", height: 320, objectFit: "cover", borderRadius: 16, display: "block" }} />
             <button onClick={() => setActive((a) => (a - 1 + imgs.length) % imgs.length)} aria-label="Sebelumnya"
               style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", width: 36, height: 36, borderRadius: "50%", border: "none", background: "rgba(0,0,0,.45)", color: "#fff", fontSize: 18, cursor: "pointer" }}>‹</button>
