@@ -15,12 +15,12 @@ Referensi visual: [Ricky + Felly Invitato](https://invitato.net/template-rickyfe
 | Animasi | **GSAP 3 + ScrollTrigger + ScrollToPlugin** | Entrance cover, reveal on-scroll, transisi buka undangan, fade slide gallery |
 | Backend | **Express 4 + TypeScript** (`tsx` untuk dev/watch) | Satu service Node, serve `dist/` + API |
 | Validasi | **Zod** (client + server, skema kembar) | Aturan identik di `src/lib/validation.ts` dan `server/routes/*` |
-| Database | **SQLite via better-sqlite3** (WAL) | Zero-infra, file lokal, migration idempoten |
+| Database | **Neon Postgres** via `@neondatabase/serverless` (HTTP, murni JS) | Persisten di serverless; tanpa kompilasi native (yang membuat `better-sqlite3` gagal di Vercel) |
 | ID | **uuid v4** | Primary key `rsvps`/`wishes` |
 | Font | Google Fonts: **Marcellus** (display), **Cormorant Upright** (body), **Great Vibes** (script), **Jost** (UI) | `font-display: swap` |
 | Concurrency dev | `concurrently` | `npm run dev` = Vite + Express sekaligus |
 
-Alasan pemilihan: stack ini menyelesaikan slice end-to-end (frontend → API → DB) dalam 1–2 hari tanpa infra eksternal, sesuai rekomendasi PRD (React+TS) dan batasan assessment (asset pack lokal, tanpa layanan pihak ketiga wajib).
+Alasan pemilihan: stack ini menyelesaikan slice end-to-end (frontend → API → DB) dalam 1–2 hari. Backend + DB sengaja **tanpa modul native** agar `npm install` lolos di Vercel; SQLite file-based ditinggalkan karena (1) `better-sqlite3` wajib kompilasi via node-gyp yang gagal di build Vercel, dan (2) filesystem serverless bersifat ephemeral sehingga data SQLite tidak persisten.
 
 ---
 
@@ -36,13 +36,23 @@ npm install
 ```
 
 ### Environment
-Copy `.env.example` ke `.env` (opsional — default SQLite file):
+Tanpa file `.env` — semua konfigurasi hardcoded di `server/env.ts`:
+```ts
+export const env = {
+  DATABASE_URL: "postgresql://...neon.tech/...?sslmode=require",
+  PORT: 3000,
+  PUBLIC_APP_URL: "http://localhost:5173",
+  EVENT_TIMEZONE: "Asia/Jakarta",
+};
 ```
-DATABASE_URL=./data.db
-PORT=3000
-PUBLIC_APP_URL=http://localhost:5173
-EVENT_TIMEZONE=Asia/Jakarta
+Kalau password Neon di-reset, ganti string `DATABASE_URL` di file itu lalu redeploy.
+
+### Migration (wajib sekali tiap database baru)
+Server tidak auto-migrate saat boot (aman untuk cold-start serverless). Jalankan manual:
+```bash
+npm run migrate   # perlu DATABASE_URL terisi; idempoten, aman diulang
 ```
+Tanpa migrate, endpoint DB mengembalikan 500 rapi (`INTERNAL_ERROR`) sementara `/api/health` dan halaman statis tetap hidup.
 
 ### Development (Vite + Express via proxy)
 ```bash
@@ -62,7 +72,7 @@ npm start              # serve dist via Express di PORT (default 3000)
 Health check: `GET /api/health` → `{ status:"ok" }`
 
 ### Migration
-SQLite otomatis dibuat saat server start (`server/db/client.ts: initDb`). Manual:
+Jalankan sekali tiap database baru (lihat Environment di atas):
 ```bash
 npm run migrate
 ```
@@ -83,7 +93,7 @@ Single public web app — tanpa auth/dashboard di MVP.
 
 ```
 Browser --HTTPS--> Frontend (React+TS)
-                        --JSON/HTTPS--> Backend Express --> SQLite (rsvps, wishes)
+                        --JSON/HTTPS--> Backend Express --> Neon Postgres (rsvps, wishes)
 ```
 
 **Repository:**
@@ -121,16 +131,19 @@ src/
   types/                      # RsvpPayload, Wish, ApiError, ...
 server/
   app.ts                      # express, JSON limit 16kb, rate-limit, static dist, SPA fallback, health
+                              # (app.listen nonaktif saat VERCEL=1; lihat api/index.ts)
+  api/index.ts                # entry serverless Vercel → teruskan semua request ke Express
   routes/rsvps.ts, wishes.ts  # validasi zod → normalisasi trim → INSERT → 201/400/500
   middleware/rateLimit.ts      # in-memory per-IP (rsvps 30/menit, wishes POST 20/menit)
   middleware/errorHandler.ts  # NOT_FOUND + INTERNAL_ERROR konsisten
-  db/client.ts, migrate.ts    # SQLite WAL + initDb idempoten
+  db/client.ts (neon + initDb), migrate.ts
+vercel.json                   # build frontend+server, rewrite (.*) → /api/index, include dist/**
 ```
 
 **Tanggung jawab:**
 - Frontend: render cover tanpa menunggu API, countdown client-side, wishes dimuat saat section masuk viewport (fallback timer 2s), validasi cepat + cegah double-submit, render plain text (tanpa `dangerouslySetInnerHTML`).
 - API: validasi zod ulang, normalisasi trim, map error → `{ error:{code,message,fields} }`, rate-limit POST, payload limit 16kb.
-- DB: file SQLite mode WAL, migration idempoten, index `wishes(created_at DESC)`.
+- DB: Neon Postgres via HTTP driver, migration idempoten (`npm run migrate`), index `wishes(created_at DESC)`.
 
 ---
 
@@ -169,18 +182,18 @@ Satu `.chrome-bar` fixed: lingkaran menu 44px | spacer | pil musik | pil bahasa 
 
 | Variable | Contoh | Keterangan |
 |---|---|---|
-| `DATABASE_URL` | `./data.db` atau `file:./data.db` | Path SQLite file |
+| `DATABASE_URL` | `postgresql://user:...@ep-xxx.neon.tech/db?sslmode=require` | Connection string Neon Postgres (wajib) |
 | `PORT` | `3000` | Port Express |
 | `PUBLIC_APP_URL` | `https://...` | URL publik untuk OG/metadata |
 | `EVENT_TIMEZONE` | `Asia/Jakarta` | Digunakan di eventConfig + countdown |
 
-Secret tidak dicommit; hanya `.env.example`.
+Secret tidak dicommit via file env; satu-satunya secret (password Neon) ada di `server/env.ts`.
 
 ---
 
-## 6. Database
+## 6. Database (Neon Postgres)
 
-Schema (otomatis via `initDb`):
+Schema via `npm run migrate` (idempoten, `CREATE TABLE IF NOT EXISTS`):
 
 ```sql
 CREATE TABLE rsvps (
@@ -188,23 +201,22 @@ CREATE TABLE rsvps (
   guest_name TEXT NOT NULL,
   attendance TEXT NOT NULL CHECK (attendance IN ('HADIR','TIDAK_HADIR')),
   guest_count INTEGER NOT NULL CHECK (guest_count BETWEEN 1 AND 10),
-  created_at TEXT NOT NULL,
-  updated_at TEXT NOT NULL
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE TABLE wishes (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   message TEXT NOT NULL,
-  created_at TEXT NOT NULL
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX wishes_created_at_idx ON wishes (created_at DESC);
 ```
 
 - `rsvps` & `wishes` append-only dari sisi pengguna.
 - `guestCount` konsisten 1–10 untuk `HADIR` maupun `TIDAK_HADIR` (default 1 sebagai jumlah kontak standar; tidak memakai 0 agar form tetap sederhana).
-- `created_at` ISO string, wishes di-order DESC (terbaru dulu, tie-break `rowid`).
-
-Untuk ganti ke Postgres di production, cukup ganti `DATABASE_URL` + adapt `db/client.ts` (saat ini SQLite untuk kemudahan assessment tanpa infra eksternal).
+- `created_at` TIMESTAMPTZ; API selalu mengembalikan ISO string; wishes di-order DESC (terbaru dulu, tie-break `id`).
+- Akses via `@neondatabase/serverless` (HTTP, tanpa modul native). Client dibuat lazy — tanpa `DATABASE_URL`, endpoint DB 500 rapi sementara health/static tetap hidup.
 
 ---
 
@@ -224,15 +236,21 @@ Frontend memakai satu `apiClient` dengan timeout 10s; tidak melakukan optimistic
 
 ## 8. Deployment
 
+### Vercel (didukung penuh)
+1. Tidak perlu setting Environment Variables (semua hardcoded di `server/env.ts`).
+2. `vercel.json` sudah mengatur: `buildCommand` (`npm run build && npm run build:server`), rewrite semua request ke fungsi `api/index.ts` (Express: API + static `dist` + SPA fallback), dan `includeFiles: dist/**`.
+3. Import repo → Deploy. Tidak ada `node-gyp`/kompilasi native (driver DB murni JS).
+4. Setelah deploy pertama: `npm run migrate` sekali dari lokal dengan `DATABASE_URL` production (atau via Vercel CLI `vercel env pull` + `npm run migrate`).
+5. Verifikasi: `https://<app>.vercel.app/api/health` → `{status:"ok"}`, buka halaman + submit wishes test.
+
+### VPS/umum
 Pipeline minimum:
 1. `npm ci` (lockfile)
 2. `npm run build && npm run build:server`
-3. `npm run migrate` (idempoten)
-4. `npm start` (Express serve `dist` + SPA fallback)
+3. `npm run migrate` (idempoten, perlu `DATABASE_URL`)
+4. `npm start` (Express serve `dist` + SPA fallback, `app.listen` aktif karena `VERCEL` tidak diset)
 
-Provider bebas (Vercel, Fly, Render, Railway, VPS). Pastikan `DATABASE_URL` persistent (volume mount untuk SQLite atau Postgres URL). Health check `GET /api/health`.
-
-Untuk hosting terpisah (frontend CDN + API), set proxy `vite.config.ts` ke API URL production dan pastikan CORS.
+Health check `GET /api/health`. Untuk hosting terpisah (frontend CDN + API), set proxy `vite.config.ts` ke API URL production dan pastikan CORS.
 
 ---
 
@@ -242,7 +260,7 @@ Untuk hosting terpisah (frontend CDN + API), set proxy `vite.config.ts` ke API U
 |---|---|---|
 |1| **Frontend Vite + React + TS** | Sesuai rekomendasi PRD, cepat untuk MVP 1–2 hari, HMR baik |
 |2| **Backend Express + TS + Zod** | Sederhana, validasi terpusat, mudah di-deploy sebagai single Node service |
-|3| **DB SQLite (better-sqlite3)** | Zero infra untuk assessment; file-based, WAL, migration mudah. Mudah swap ke Postgres via DATABASE_URL |
+|3| **DB Neon Postgres (HTTP driver)** | SQLite file tidak persisten di serverless + `better-sqlite3` gagal kompilasi di build Vercel. Neon gratis, driver murni JS, data persisten lintas invocation |
 |4| **Animasi GSAP ScrollTrigger (bukan IO manual)** | Butuh orkestrasi stagger/tilt/scrub per grup + habits anti-blink pada transisi cover; satu sesi `gsap.context` mudah di-revert |
 |5| **Setup trigger saat klik (di balik cover)** | Me-hide hero selagi tertutup = tanpa blink; hero ikut entrance saat auto-scroll lewat; posisi trigger final setelah cover hilang |
 |6| **Trigger per kartu, bukan per section** | Kartu mempelai wanita & tiap wishes animasi saat masuk viewport, bukan sekaligus di awal section |
@@ -250,6 +268,7 @@ Untuk hosting terpisah (frontend CDN + API), set proxy `vite.config.ts` ke API U
 |8| **Wishes load on viewport + fallback 2s, tanpa optimistic update** | Tetap load bila observer tak trigger; hanya tampil setelah 201 agar tak menampilkan data gagal simpan |
 |9| **Single chrome-bar + sentinel footer** | Tiga tombol fixed manual terbukti tabrakan di 320px; satu flex bar + docking kolom desktop + auto-hide di ujung = proporsional & tak menutup footer |
 |10| **Pemetaan aset di eventConfig.ts** | Cover `1.png`, countdown `7.png` + overlay hitam 45%, gallery `1–5.png`, footer `10.png`; `object-position` per gambar + `alt` deskriptif |
+|11| **Satu fungsi Express di Vercel** | `api/index.ts` teruskan semua request ke Express (API + static + SPA fallback) — perilaku identik dengan `npm start` lokal; `app.listen` nonaktif saat `VERCEL=1` |
 
 ---
 

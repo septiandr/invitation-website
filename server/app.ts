@@ -7,9 +7,10 @@ import { rsvpRouter } from "./routes/rsvps.js";
 import { wishesRouter } from "./routes/wishes.js";
 import { rateLimit } from "./middleware/rateLimit.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
+import { env } from "./env.js";
 
 const app = express();
-const PORT = Number(process.env.PORT || 3000);
+const PORT = env.PORT;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -64,8 +65,12 @@ app.get("*", (_req, res, next) => {
 
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+// Di Vercel (serverless) app diimpor oleh api/index tanpa listen —
+// Vercel mengatur VERCEL=1 otomatis. Lokal/npm start tetap listen.
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
+}
 
 export default app;

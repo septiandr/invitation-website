@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
-import { db } from "../db/client.js";
+import { sql } from "../db/client.js";
 
 export const wishesRouter = Router();
 
@@ -10,13 +10,22 @@ const wishSchema = z.object({
   message: z.string().trim().min(1, "Pesan wajib diisi.").max(500, "Pesan maksimal 500 karakter."),
 });
 
-wishesRouter.get("/", (_req, res) => {
+type WishRow = {
+  id: string;
+  name: string;
+  message: string;
+  createdAt: string | Date;
+};
+
+wishesRouter.get("/", async (_req, res) => {
   try {
-    const rows = db.prepare("SELECT id, name, message, created_at as createdAt FROM wishes ORDER BY datetime(created_at) DESC, rowid DESC").all() as Array<{
-      id: string; name: string; message: string; createdAt: string;
-    }>;
-    // ensure ISO format
-    const items = rows.map(r => ({
+    const rows = (await sql`
+      SELECT id, name, message, created_at AS "createdAt"
+      FROM wishes
+      ORDER BY created_at DESC, id DESC
+    `) as WishRow[];
+    // pastikan ISO format (driver bisa kembalikan string atau Date)
+    const items = rows.map((r) => ({
       id: r.id,
       name: r.name,
       message: r.message,
@@ -29,7 +38,7 @@ wishesRouter.get("/", (_req, res) => {
   }
 });
 
-wishesRouter.post("/", (req, res) => {
+wishesRouter.post("/", async (req, res) => {
   const parsed = wishSchema.safeParse(req.body);
   if (!parsed.success) {
     const fields: Record<string, string> = {};
@@ -44,8 +53,7 @@ wishesRouter.post("/", (req, res) => {
   const now = new Date().toISOString();
 
   try {
-    const stmt = db.prepare("INSERT INTO wishes (id, name, message, created_at) VALUES (?, ?, ?, ?)");
-    stmt.run(id, name.trim(), message.trim(), now);
+    await sql`INSERT INTO wishes (id, name, message, created_at) VALUES (${id}, ${name.trim()}, ${message.trim()}, ${now})`;
   } catch (e) {
     console.error(e);
     return res.status(500).json({ error: { code: "INTERNAL_ERROR", message: "Gagal menyimpan wishes." } });

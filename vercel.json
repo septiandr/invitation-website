@@ -1,0 +1,10 @@
+{
+  "buildCommand": "npm run build && npm run build:server",
+  "outputDirectory": "dist",
+  "rewrites": [{ "source": "/(.*)", "destination": "/api/index" }],
+  "functions": {
+    "api/index.ts": {
+      "includeFiles": "dist/**"
+    }
+  }
+}
