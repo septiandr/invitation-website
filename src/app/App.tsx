@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
+import { gsap } from "gsap";
+import { ScrollToPlugin } from "gsap/ScrollToPlugin";
 import { Cover } from "../components/Cover/Cover";
 import { Hero } from "../components/Hero/Hero";
 import { DesktopBanner } from "../components/DesktopBanner/DesktopBanner";
@@ -12,6 +14,8 @@ import { Wishes } from "../components/Wishes/Wishes";
 import { MusicControl } from "../components/MusicControl/MusicControl";
 import { OpeningQuote, CoupleProfile, LoveStory, WeddingGift, GuestQr, Closing } from "../components/InvitationSections";
 import { getLang, setLang, t } from "../lib/i18n";
+
+gsap.registerPlugin(ScrollToPlugin);
 
 const NAV = [
   { id: "couple", idLabel: "Mempelai", enLabel: "Couple" },
@@ -111,7 +115,6 @@ export default function App() {
     const hero = document.getElementById("hero");
     if (!coverEl || !hero) return;
 
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const target = hero.getBoundingClientRect().top + window.scrollY;
     let finished = false;
 
@@ -127,16 +130,21 @@ export default function App() {
       html.style.scrollBehavior = prevScrollBehavior;
     };
 
-    html.style.scrollBehavior = "auto";
-    window.scrollTo({ top: target, behavior: reduce ? "auto" : "smooth" });
-    if (reduce) {
-      hideCover();
-    } else {
-      // `scrollend` memberi tahu kapan scroll halus selesai; fallback timer
-      // untuk browser lama / scroll yang disela.
-      window.addEventListener("scrollend", hideCover, { once: true });
-      window.setTimeout(hideCover, 1200);
-    }
+    // Mulai scroll pelan menuju konten undangan hampir seketika setelah klik
+    // (jeda kecil agar klik terasa terekam). Scroll selalu dimainkan agar
+    // perpindahan terasa halus di semua perangkat.
+    const startScroll = window.setTimeout(() => {
+      html.style.scrollBehavior = "auto";
+      gsap.to(window, {
+        scrollTo: { y: target, autoKill: true },
+        duration: 2.2,
+        ease: "power2.inOut",
+        onComplete: hideCover,
+        // Pengguna menyela scroll → selesaikan tanpa macet.
+        onInterrupt: hideCover,
+      });
+    }, 250);
+    return () => window.clearTimeout(startScroll);
   }, [isOpened]);
 
   return (
