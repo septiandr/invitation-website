@@ -78,5 +78,5 @@ export const eventConfig: EventConfig = {
     { src: "/assets/9.png", alt: "Joyful landscape moment", objectPosition: "50% 50%" },
     { src: "/assets/10.png", alt: "Feature landscape with elegant composition", objectPosition: "50% 50%" },
   ],
-  backgroundAudio: "https://cdn.pixabay.com/download/audio/2022/03/24/audio_1c8c8f3a63.mp3?filename=romantic-wedding-background-music-112199.mp3",
+  backgroundAudio: "https://invitato.net/template-rickyfelly/static/bg-sound-f26b8f4c5518b48f7ff52c53516f2b2b.mp3",
 };
