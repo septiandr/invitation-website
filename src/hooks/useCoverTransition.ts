@@ -6,7 +6,7 @@ import { ScrollToPlugin } from "gsap/ScrollToPlugin";
 gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
 
 const OPEN_DELAY_MS = 250;
-const OPEN_SCROLL_DURATION = 2.2;
+const OPEN_SCROLL_DURATION = 3.4;
 
 type Args = {
   isOpened: boolean;

@@ -139,7 +139,7 @@ server/
 ### 4.1 Transisi cover → konten (`useCoverTransition`)
 1. Sebelum dibuka, `body overflow: hidden` — cover 100svh menjadi layar pertama.
 2. Saat klik **Buka Undangan**: musik diputar **sinkron** dalam gesture (`lib/audio.ts`, syarat iOS Safari), lalu `setupAnims()` dipasang **selagi viewport masih tertutup cover opaque** — me-hide hero di titik ini tidak terlihat, jadi tidak ada blink.
-3. Auto-scroll 2.2s (`ScrollToPlugin`, `power2.inOut`) ke hero; target diukur sesaat sebelum scroll agar tidak basi oleh font/gambar yang telat load.
+3. Auto-scroll **3.4s** (`ScrollToPlugin`, `power2.inOut`, sengaja lambat & sinematik) ke hero; target diukur sesaat sebelum scroll agar tidak basi oleh font/gambar yang telat load.
 4. `hideCover`: hapus cover dari layout + kompensasi scroll dengan **tinggi cover aktual** (`scrollY - coverHeight`, kebal layout shift), lalu `flushAnims()` + `ScrollTrigger.refresh()` (murni kalkulasi ulang).
 
 ### 4.2 Sistem reveal on-scroll (`useScrollAnims` + `lib/anim`)
@@ -149,6 +149,8 @@ server/
 - **grup kartu** → tilt 3D `rotateX` **per item dengan trigger sendiri**: kartu mempelai pria main saat masuk, mempelai wanita belakangan; tiap wishes juga trigger sendiri.
 
 Trigger memakai `toggleActions: "play none none reverse"` (berulang tiap re-enter). Konten dinamis (wishes hasil fetch/submit) ditangani `MutationObserver`: yang terlihat langsung fade-in, yang di bawah lipatan dibuatkan trigger — dengan antrean (`pending`) + penundaan refresh selama auto-scroll pembuka agar scroll tetap mulus.
+
+Efek scroll tambahan: **parallax scrub** (`data-parallax`, gambar countdown/footer/banner melayang mengikuti scroll), **stagger kata-per-kata** pada judul (`splitWords`), **pita marquee** CSS di antara section, dan **ornamen kurva melayang** (yoyo sine). `ScrollTrigger.config({ ignoreMobileResize: true })` mencegah lompat saat URL bar mobile muncul/hilang.
 
 Tambahan: Cover punya timeline entrance sendiri (bg zoom `1.15→1` + teks stagger blur), Gallery fade + zoom tiap ganti slide.
 

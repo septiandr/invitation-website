@@ -23,12 +23,16 @@ export function Hero() {
         </blockquote>
         <p style={{ fontFamily: "var(--font-body)", fontWeight: 700, textTransform: "uppercase", fontSize: 15, marginTop: 20, color: "#2C3F4E" }}>— {eventConfig.quote.source}</p>
 
-        {/* layered welcome visual: wide bg + portrait overlay */}
+        {/* layered welcome visual: wide bg (parallax) + portrait overlay (counter-parallax) */}
         <div style={{ position: "relative", marginTop: "30%" }}>
-          <img src="/assets/5.png" alt="Welcome background" loading="lazy"
-            style={{ width: "100%", height: 440, maxWidth: 500, objectFit: "cover", objectPosition: "center", margin: "0 auto", display: "block" }} />
-          <img src="/assets/1.png" alt="Ricky and Fellycia" loading="eager"
-            style={{ position: "absolute", top: "-18%", left: "50%", transform: "translateX(-50%)", width: 273, height: 420, maxWidth: "70%", objectFit: "cover", objectPosition: "50% 20%", zIndex: 2, border: "6px solid #fff", boxShadow: "0 12px 32px rgba(44,63,78,.2)" }} />
+          <div style={{ width: "100%", maxWidth: 500, margin: "0 auto", overflow: "hidden" }}>
+            <img src="/assets/background.jpg" alt="Welcome background" loading="lazy" data-parallax="8"
+              style={{ width: "100%", height: 440, objectFit: "cover", objectPosition: "center", display: "block" }} />
+          </div>
+          <div style={{ position: "absolute", top: "-18%", left: "50%", transform: "translateX(-50%)", width: 273, maxWidth: "70%", zIndex: 2 }}>
+            <img src="/assets/1.png" alt="Ricky and Fellycia" loading="eager" data-parallax="6" data-parallax-dir="reverse"
+              style={{ width: "100%", height: 420, objectFit: "cover", objectPosition: "50% 20%", border: "6px solid #fff", boxShadow: "0 12px 32px rgba(44,63,78,.2)", display: "block" }} />
+          </div>
         </div>
         <p style={{ marginTop: 18, fontFamily: "var(--font-body)", fontSize: 17, color: "#737373" }}>
           {t(lang, "Dengan penuh sukacita, kami menyambut Anda di halaman kisah cinta kami.", "Together with joyful hearts, we welcome you to our love story.")}

@@ -21,7 +21,9 @@ export function EventDetails() {
         </p>
 
         {eventConfig.events.map((ev, i) => (
-          <div key={ev.title} style={{ marginTop: 32 }}>
+          // <article> = grup kartu per item: tiap agenda (Akad & Resepsi)
+          // animasi sendiri saat masuk viewport (sama seperti kartu mempelai).
+          <article key={ev.title} style={{ marginTop: 32 }}>
             <div style={{ fontSize: 50, color: "#737373" }} aria-hidden>{i === 0 ? "💍" : "🥂"}</div>
             <h3 style={{ fontFamily: "var(--font-display)", fontSize: 22, color: "#2C3F4E", margin: "8px 0" }}>
               {i === 0 ? t(lang, "Holy Matrimony:", "Holy Matrimony:") : t(lang, "Resepsi Pernikahan:", "Reception:")} {ev.title}
@@ -39,7 +41,7 @@ export function EventDetails() {
                 {t(lang, "Ingatkan Acara", "Remind Me")}
               </a>
             </div>
-          </div>
+          </article>
         ))}
       </div>
     </section>

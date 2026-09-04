@@ -52,6 +52,34 @@ export function inViewport(el: Element, ratio = 0.92): boolean {
   return r.top < window.innerHeight * ratio && r.bottom > 0;
 }
 
+/**
+ * Pecah text-node langsung menjadi span per kata (elemen anak dibiarkan).
+ * Untuk stagger kata-per-kata pada judul. Aman dipanggil sekali per elemen.
+ */
+export function splitWords(el: HTMLElement): HTMLElement[] {
+  if (el.dataset.wordsSplit === "1") return Array.from(el.querySelectorAll<HTMLElement>(".w-split"));
+  el.dataset.wordsSplit = "1";
+  const spans: HTMLElement[] = [];
+  Array.from(el.childNodes).forEach((n) => {
+    if (n.nodeType !== Node.TEXT_NODE) return;
+    const frag = document.createDocumentFragment();
+    (n.textContent ?? "").split(/(\s+)/).forEach((part) => {
+      if (!part) return;
+      if (/^\s+$/.test(part)) {
+        frag.appendChild(document.createTextNode(" "));
+        return;
+      }
+      const s = document.createElement("span");
+      s.className = "w-split";
+      s.textContent = part;
+      frag.appendChild(s);
+      spans.push(s);
+    });
+    el.replaceChild(frag, n);
+  });
+  return spans.length ? spans : [el];
+}
+
 export type CardGroup = {
   /** Elemen yang menjadi trigger ScrollTrigger grup ini. */
   trigger: HTMLElement;
@@ -60,9 +88,13 @@ export type CardGroup = {
 };
 
 export type Collected = {
-  /** Semua teks di luar kartu (judul dulu, lalu paragraf/tombol). */
+  /** Judul (dianimasikan per kata). */
+  headingEls: HTMLElement[];
+  /** Paragraf/tombol/label (dianimasikan per elemen). */
+  paraEls: HTMLElement[];
+  /** Semua teks (gabungan, untuk kompatibilitas). */
   textEls: HTMLElement[];
-  /** Media di luar kartu (trigger = section). */
+  /** Media di luar kartu (trigger = section). Elemen [data-parallax] dikecualikan. */
   mediaEls: HTMLElement[];
   /** Grup kartu, masing-masing dengan trigger sendiri (per item). */
   groups: CardGroup[];
@@ -102,6 +134,8 @@ export function collectSection(root: HTMLElement): Collected {
   root.querySelectorAll<HTMLElement>("*").forEach((el) => {
     if (isSkippable(el)) return;
     if (isMedia(el)) {
+      // Elemen [data-parallax] ditangani Blok parallax scrub tersendiri.
+      if (el.hasAttribute("data-parallax")) return;
       const owner = groupTriggers.find((t) => t.contains(el));
       if (owner) {
         const list = mediaInGroup.get(owner) ?? [];
@@ -118,5 +152,5 @@ export function collectSection(root: HTMLElement): Collected {
     }
   });
 
-  return { textEls: [...headingEls, ...paraEls], mediaEls, groups, mediaInGroup };
+  return { textEls: [...headingEls, ...paraEls], headingEls, paraEls, mediaEls, groups, mediaInGroup };
 }

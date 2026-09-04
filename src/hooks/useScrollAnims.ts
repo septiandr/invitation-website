@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { collectSection, inViewport, staggerFor } from "../lib/anim";
+import { collectSection, inViewport, splitWords, staggerFor } from "../lib/anim";
 
 gsap.registerPlugin(ScrollTrigger);
+// URL bar mobile yang muncul/hilang tidak boleh menggeser trigger (anti lompat).
+ScrollTrigger.config({ ignoreMobileResize: true });
 
 const ROOTS_SELECTOR = ".page-content section, .page-content footer, .desktop-banner";
 const EASE = "power3.out";
@@ -98,15 +100,30 @@ export function useScrollAnims(): AnimsApi {
       ctx = gsap.context(() => {
         const roots = gsap.utils.toArray<HTMLElement>(ROOTS_SELECTOR);
         roots.forEach((root) => {
-          const { textEls, mediaEls, groups, mediaInGroup } = collectSection(root);
-          if (textEls.length) {
+          const { headingEls, paraEls, mediaEls, groups, mediaInGroup } = collectSection(root);
+          // Judul: stagger kata-per-kata.
+          const wordSpans: HTMLElement[] = [];
+          headingEls.forEach((h) => wordSpans.push(...splitWords(h)));
+          if (wordSpans.length) {
             gsap.fromTo(
-              textEls,
+              wordSpans,
+              { y: 26, opacity: 0, filter: "blur(4px)" },
+              {
+                y: 0, opacity: 1, filter: "blur(0px)",
+                duration: 0.8, ease: EASE,
+                stagger: staggerFor(wordSpans.length, 0.05, 0.8),
+                scrollTrigger: { trigger: root, start: "top 80%", toggleActions: "play none none reverse" },
+              }
+            );
+          }
+          if (paraEls.length) {
+            gsap.fromTo(
+              paraEls,
               { y: 36, opacity: 0, filter: "blur(6px)" },
               {
                 y: 0, opacity: 1, filter: "blur(0px)",
                 duration: 0.9, ease: EASE,
-                stagger: staggerFor(textEls.length, 0.08, 0.7),
+                stagger: staggerFor(paraEls.length, 0.08, 0.7),
                 scrollTrigger: { trigger: root, start: "top 80%", toggleActions: "play none none reverse" },
               }
             );
@@ -176,6 +193,37 @@ export function useScrollAnims(): AnimsApi {
           if (fresh.length) animateNew(fresh);
         });
         if (page) mo.observe(page, { childList: true, subtree: true });
+
+        // Parallax scrub untuk [data-parallax] (terpisah dari zoom batch):
+        // gambar melayang pelan mengikuti scroll. Overscan via scale agar
+        // tepi tak bocor di dalam frame overflow-hidden.
+        // data-parallax-dir="reverse" = bergerak berlawanan arah (depth).
+        gsap.utils.toArray<HTMLElement>("[data-parallax]").forEach((el) => {
+          const amt = parseFloat(el.dataset.parallax || "7");
+          const dir = el.dataset.parallaxDir === "reverse" ? -1 : 1;
+          const trigger = el.closest("section, footer, aside") ?? el;
+          gsap.set(el, { scale: 1.18 });
+          gsap.fromTo(
+            el,
+            { yPercent: -amt * dir },
+            {
+              yPercent: amt * dir,
+              ease: "none",
+              scrollTrigger: { trigger, start: "top bottom", end: "bottom top", scrub: 1 },
+            }
+          );
+        });
+
+        // Ornamen kurva melayang lembut tanpa henti (murah: tanpa ScrollTrigger).
+        gsap.utils.toArray<HTMLElement>(".curve-deco").forEach((el, i) => {
+          gsap.to(el, {
+            y: i % 2 === 0 ? 12 : -12,
+            duration: 3.5 + i,
+            yoyo: true,
+            repeat: -1,
+            ease: "sine.inOut",
+          });
+        });
       });
       ScrollTrigger.refresh();
     };

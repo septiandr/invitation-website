@@ -11,8 +11,21 @@ function SectionHeading({ eyebrow, title, dark }: { eyebrow: string; title: stri
   );
 }
 
-export function OpeningQuote() {
-  const lang = getLang();
+/** Pita teks berjalan dekoratif (CSS keyframes, tanpa JS per frame). */
+export function MarqueeStrip() {
+  const seq = "Ricky & Fellycia  ✦  20 • 12 • 2026  ✦  ";
+  const line = seq.repeat(1);
+  return (
+    <section aria-hidden className="marquee-strip">
+      <div className="marquee-track">
+        <span>{line}</span>
+        <span>{line}</span>
+      </div>
+    </section>
+  );
+}
+
+export function OpeningQuote() {  const lang = getLang();
   return (
     <section style={{ background: "#323030", color: "white", textAlign: "center", padding: "56px 24px" }}>
       <div style={{ maxWidth: 430, margin: "0 auto" }}>
@@ -193,7 +206,7 @@ export function Closing() {
   return (
     <footer style={{ background: "#D5DADE" }}>
       <div style={{ position: "relative", height: "90vh", minHeight: 560, maxHeight: 750, overflow: "hidden" }}>
-        <img src="/assets/10.png" alt="Footer" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "bottom" }} />
+        <img src="/assets/10.png" alt="Footer" loading="lazy" data-parallax="7" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "bottom" }} />
         <div style={{ position: "absolute", inset: 0, background: "#323030", opacity: 0.6 }} />
         <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: 24 }}>
           <p style={{ fontFamily: "var(--font-body)", fontSize: 24, color: "#FEFEFE", margin: 0 }}>{t(lang, "Terima kasih,", "Thank you,")}</p>

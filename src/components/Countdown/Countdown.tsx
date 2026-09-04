@@ -19,7 +19,7 @@ export function Countdown() {
     <section id="countdown" style={{ background: "#323030", position: "relative", overflow: "hidden" }}>
       {/* bg layer 7.png + wrap hitam transparan agar teks tetap terbaca */}
       <div style={{ maxHeight: 400, overflow: "hidden", position: "relative" }}>
-        <img src="/assets/7.png" alt="" aria-hidden loading="lazy"
+        <img src="/assets/7.png" alt="" aria-hidden loading="lazy" data-parallax="7"
           style={{ width: "100%", height: 315, objectFit: "cover", filter: "grayscale(100%)" }} />
         <div aria-hidden style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.45)" }} />
       </div>

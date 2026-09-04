@@ -16,6 +16,7 @@ export function DesktopBanner() {
         alt=""
         aria-hidden
         loading="lazy"
+        data-parallax="5"
         style={{
           position: "absolute",
           inset: 0,

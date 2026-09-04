@@ -17,6 +17,7 @@ import {
   WeddingGift,
   GuestQr,
   Closing,
+  MarqueeStrip,
 } from "../components/InvitationSections";
 import { useScrollAnims } from "../hooks/useScrollAnims";
 import { useCoverTransition } from "../hooks/useCoverTransition";
@@ -47,6 +48,7 @@ export default function App() {
       {/* order mirrors invitato: welcome/hero, quote, couple, countdown, details, gallery, location, rsvp, wishes, gift, qr, footer */}
       <div className="page-content">
         <Hero />
+        <MarqueeStrip />
         <OpeningQuote />
         <CoupleProfile />
         <Countdown />
@@ -58,6 +60,7 @@ export default function App() {
         <Wishes />
         <WeddingGift />
         <GuestQr />
+        <MarqueeStrip />
         <Closing />
       </div>
 
