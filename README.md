@@ -6,7 +6,25 @@ Referensi visual: [Ricky + Felly Invitato](https://invitato.net/template-rickyfe
 
 ---
 
-## 1. Cara Menjalankan Lokal
+## 1. Teknologi
+
+| Lapisan | Teknologi | Keterangan |
+|---|---|---|
+| Build/dev | **Vite 6** + `@vitejs/plugin-react` | Dev server + HMR, proxy `/api` → Express saat dev |
+| Frontend | **React 18 + TypeScript** | Satu halaman long-scroll, state lokal per fitur |
+| Animasi | **GSAP 3 + ScrollTrigger + ScrollToPlugin** | Entrance cover, reveal on-scroll, transisi buka undangan, fade slide gallery |
+| Backend | **Express 4 + TypeScript** (`tsx` untuk dev/watch) | Satu service Node, serve `dist/` + API |
+| Validasi | **Zod** (client + server, skema kembar) | Aturan identik di `src/lib/validation.ts` dan `server/routes/*` |
+| Database | **SQLite via better-sqlite3** (WAL) | Zero-infra, file lokal, migration idempoten |
+| ID | **uuid v4** | Primary key `rsvps`/`wishes` |
+| Font | Google Fonts: **Marcellus** (display), **Cormorant Upright** (body), **Great Vibes** (script), **Jost** (UI) | `font-display: swap` |
+| Concurrency dev | `concurrently` | `npm run dev` = Vite + Express sekaligus |
+
+Alasan pemilihan: stack ini menyelesaikan slice end-to-end (frontend → API → DB) dalam 1–2 hari tanpa infra eksternal, sesuai rekomendasi PRD (React+TS) dan batasan assessment (asset pack lokal, tanpa layanan pihak ketiga wajib).
+
+---
+
+## 2. Cara Menjalankan Lokal
 
 ### Prereq
 - Node.js 20+ (tested 22.16.0)
@@ -30,14 +48,14 @@ EVENT_TIMEZONE=Asia/Jakarta
 ```bash
 npm run dev
 # client: http://localhost:5173
-# server: http://localhost:3000  (diproduksi via proxy /api)
+# server: http://localhost:3000  (diproduksi via proxy /api, lihat vite.config.ts)
 ```
 - `npm run dev:client` — Vite saja
 - `npm run dev:server` — Express watch via `tsx`
 
 ### Production build + serve
 ```bash
-npm run build          # vite build -> dist/
+npm run build          # tsc --noEmit + vite build -> dist/
 npm run build:server   # tsc server -> dist-server/
 npm start              # serve dist via Express di PORT (default 3000)
 ```
@@ -59,41 +77,93 @@ curl -X POST http://localhost:3000/api/rsvps -H "Content-Type: application/json"
 
 ---
 
-## 2. Arsitektur
+## 3. Arsitektur & Struktur Teknis
 
-Single public web app — React + TypeScript (Vite), Express API, SQLite (better-sqlite3). Tanpa auth/dashboard di MVP.
+Single public web app — tanpa auth/dashboard di MVP.
 
 ```
-Browser --HTTPS--> Frontend (React+TS) --JSON/HTTPS--> Backend Express --> SQLite (rsvps, wishes)
+Browser --HTTPS--> Frontend (React+TS)
+                        --JSON/HTTPS--> Backend Express --> SQLite (rsvps, wishes)
 ```
 
 **Repository:**
 ```
-assets/               # assessment pack (background.jpg + 1.png..10.png)
-public/assets/        # served static copy untuk production
+public/assets/        # aset statis yang di-serve (background, 1.png..10.png, bg-music)
 src/
-  app/App.tsx
-  app/eventConfig.ts  # single source of truth untuk konten acara
-  components/Cover|Hero|Countdown|EventDetails|Gallery|Location|RsvpForm|Wishes|MusicControl
-  hooks/useCountdown, useReveal
-  lib/apiClient, validation, formatters
-  styles/global.css   # design tokens
-  types/
+  app/App.tsx                 # komposisi + state isOpened (±70 baris, logika di hooks)
+  app/eventConfig.ts          # single source of truth konten acara + pemetaan aset
+  components/
+    Cover/                    # gerbang 100svh + timeline entrance GSAP
+    Hero/                     # sapaan + visual berlapis
+    Countdown/                # hitung mundur client-side
+    EventDetails/             # agenda + tombol maps/calendar
+    Gallery/                  # carousel autoplay + swipe + fade per slide
+    PreWedding/               # embed YouTube + kartu live streaming
+    Location/                 # info venue + embed maps + fallback link
+    RsvpForm/  Wishes/        # form + state loading/success/error
+    MusicControl/             # <audio> persisten + tombol pill
+    FloatingChrome/           # drawer nav + bottom bar (menu|musik|bahasa)
+    DesktopBanner/            # banner foto kiri di layar ≥1200px
+    InvitationSections.tsx    # OpeningQuote, CoupleProfile, WeddingGift, GuestQr, Closing (+LoveStory opsional)
+  hooks/
+    useCountdown.ts           # tick 1 detik dari eventDate
+    useScrollAnims.ts         # sistem animasi scroll (setup imperatif + flush)
+    useCoverTransition.ts     # kunci scroll + auto-scroll + hapus cover
+  lib/
+    anim.ts                   # helper DOM murni: ownsText/isMedia/isSkippable/isHeading,
+                              # staggerFor/inViewport/collectSection
+    audio.ts                  # unlockBackgroundMusic() sinkron dalam gesture klik
+    apiClient.ts              # satu client fetch (timeout 10s) + parser error
+    validation.ts             # skema zod client (cerminan server)
+    formatters.ts             # getCountdown()
+    i18n.ts                   # ?lang=id|en (reload), ?guest= untuk nama tamu
+  styles/global.css           # design tokens + chrome-bar responsif
+  types/                      # RsvpPayload, Wish, ApiError, ...
 server/
-  app.ts              # express, static serve, health
-  routes/rsvps.ts, wishes.ts
-  middleware/rateLimit, errorHandler
-  db/client.ts, migrate.ts
+  app.ts                      # express, JSON limit 16kb, rate-limit, static dist, SPA fallback, health
+  routes/rsvps.ts, wishes.ts  # validasi zod → normalisasi trim → INSERT → 201/400/500
+  middleware/rateLimit.ts      # in-memory per-IP (rsvps 30/menit, wishes POST 20/menit)
+  middleware/errorHandler.ts  # NOT_FOUND + INTERNAL_ERROR konsisten
+  db/client.ts, migrate.ts    # SQLite WAL + initDb idempoten
 ```
 
 **Tanggung jawab:**
-- Frontend: render cover tanpa menunggu API, countdown client-side, lazy load wishes saat section masuk viewport, validasi cepat + disable double-submit, render plain text (no dangerouslySetInnerHTML).
-- API: validasi zod, normalisasi trim, map error → `{ error:{code,message,fields}}`, rate-limit POST, payload limit 16kb.
-- DB: file SQLite, WAL mode, migration idempoten, index `wishes(created_at DESC)`.
+- Frontend: render cover tanpa menunggu API, countdown client-side, wishes dimuat saat section masuk viewport (fallback timer 2s), validasi cepat + cegah double-submit, render plain text (tanpa `dangerouslySetInnerHTML`).
+- API: validasi zod ulang, normalisasi trim, map error → `{ error:{code,message,fields} }`, rate-limit POST, payload limit 16kb.
+- DB: file SQLite mode WAL, migration idempoten, index `wishes(created_at DESC)`.
 
 ---
 
-## 3. Environment
+## 4. Teknis Animasi & Interaksi (GSAP)
+
+### 4.1 Transisi cover → konten (`useCoverTransition`)
+1. Sebelum dibuka, `body overflow: hidden` — cover 100svh menjadi layar pertama.
+2. Saat klik **Buka Undangan**: musik diputar **sinkron** dalam gesture (`lib/audio.ts`, syarat iOS Safari), lalu `setupAnims()` dipasang **selagi viewport masih tertutup cover opaque** — me-hide hero di titik ini tidak terlihat, jadi tidak ada blink.
+3. Auto-scroll 2.2s (`ScrollToPlugin`, `power2.inOut`) ke hero; target diukur sesaat sebelum scroll agar tidak basi oleh font/gambar yang telat load.
+4. `hideCover`: hapus cover dari layout + kompensasi scroll dengan **tinggi cover aktual** (`scrollY - coverHeight`, kebal layout shift), lalu `flushAnims()` + `ScrollTrigger.refresh()` (murni kalkulasi ulang).
+
+### 4.2 Sistem reveal on-scroll (`useScrollAnims` + `lib/anim`)
+`collectSection(root)` mengklasifikasi tiap section menjadi:
+- **teks** (judul/paragraf/label/tombol, termasuk isi form) → blur + rise `y:36`, stagger adaptif (total ≤ 0.7s),
+- **media** (`img/iframe/video`, termasuk foto mempelai di dalam kartu & thumbnail gallery) → zoom `scale 1.08→1`,
+- **grup kartu** → tilt 3D `rotateX` **per item dengan trigger sendiri**: kartu mempelai pria main saat masuk, mempelai wanita belakangan; tiap wishes juga trigger sendiri.
+
+Trigger memakai `toggleActions: "play none none reverse"` (berulang tiap re-enter). Konten dinamis (wishes hasil fetch/submit) ditangani `MutationObserver`: yang terlihat langsung fade-in, yang di bawah lipatan dibuatkan trigger — dengan antrean (`pending`) + penundaan refresh selama auto-scroll pembuka agar scroll tetap mulus.
+
+Tambahan: Cover punya timeline entrance sendiri (bg zoom `1.15→1` + teks stagger blur), Gallery fade + zoom tiap ganti slide.
+
+### 4.3 Floating chrome (menu | musik | bahasa)
+Satu `.chrome-bar` fixed: lingkaran menu 44px | spacer | pil musik | pil bahasa 44px. Tidak menelan tap konten (`pointer-events` hanya di tombol), aman dari home indicator (`env(safe-area-inset-bottom)`), hint musik disembunyikan di layar <420px, dan di desktop (≥1200px) bar dikunci selebar kolom undangan kanan. Drawer navigasi (`z:69`) selalu di atas bar dengan tombol tutup sendiri. Saat scroll mencapai ujung bawah, bar meluncur turun (sentinel + `IntersectionObserver`) agar strip footer tidak tertutup.
+
+### 4.4 Detail lain
+- **i18n**: `?lang=id|en` (ganti bahasa = reload URL), teks via helper `t(lang, id, en)`; nama tamu dari `?guest=`/`?code=`/`?to=`.
+- **Countdown**: murni client-side dari `eventConfig.eventDate` (ISO + timezone), state bermakna bila lewat waktu.
+- **Wishes**: tanpa optimistic update — item baru prepend hanya setelah 201; pesan dirender sebagai plain text.
+- **Desktop**: layout 2 kolom (banner foto fixed kiri + kolom undangan kanan 340–480px) di ≥1200px, kolom tunggal terpusat di bawahnya.
+
+---
+
+## 5. Environment
 
 | Variable | Contoh | Keterangan |
 |---|---|---|
@@ -106,7 +176,7 @@ Secret tidak dicommit; hanya `.env.example`.
 
 ---
 
-## 4. Database
+## 6. Database
 
 Schema (otomatis via `initDb`):
 
@@ -129,18 +199,18 @@ CREATE INDEX wishes_created_at_idx ON wishes (created_at DESC);
 ```
 
 - `rsvps` & `wishes` append-only dari sisi pengguna.
-- `guestCount` konsisten 1–10 untuk `HADIR` maupun `TIDAK_HADIR` (dipilih 1 sebagai jumlah kontak standar; tidak menggunakan 0 agar form tetap sederhana).
-- `created_at` ISO string, di-order DESC untuk wishes terbaru dulu.
+- `guestCount` konsisten 1–10 untuk `HADIR` maupun `TIDAK_HADIR` (default 1 sebagai jumlah kontak standar; tidak memakai 0 agar form tetap sederhana).
+- `created_at` ISO string, wishes di-order DESC (terbaru dulu, tie-break `rowid`).
 
 Untuk ganti ke Postgres di production, cukup ganti `DATABASE_URL` + adapt `db/client.ts` (saat ini SQLite untuk kemudahan assessment tanpa infra eksternal).
 
 ---
 
-## 5. API Contract
+## 7. API Contract
 
 Base `/api`, JSON.
 
-- `POST /api/rsvps` → 201 `{id, guestName, attendance, guestCount, createdAt}` — 400 VALIDATION_ERROR, 429 RATE_LIMITED
+- `POST /api/rsvps` → 201 `{id, guestName, attendance, guestCount, createdAt}` — 400 VALIDATION_ERROR (+`fields`), 429 RATE_LIMITED
 - `GET /api/wishes` → 200 `{items:[{id,name,message,createdAt}]}` order DESC
 - `POST /api/wishes` → 201 item tunggal
 - `GET /api/health` → 200 `{status:"ok"}`
@@ -150,60 +220,65 @@ Frontend memakai satu `apiClient` dengan timeout 10s; tidak melakukan optimistic
 
 ---
 
-## 6. Deployment
+## 8. Deployment
 
 Pipeline minimum:
 1. `npm ci` (lockfile)
 2. `npm run build && npm run build:server`
 3. `npm run migrate` (idempoten)
-4. `npm start` (Express serve `dist`)
+4. `npm start` (Express serve `dist` + SPA fallback)
 
 Provider bebas (Vercel, Fly, Render, Railway, VPS). Pastikan `DATABASE_URL` persistent (volume mount untuk SQLite atau Postgres URL). Health check `GET /api/health`.
 
-Untuk hosting terpisah (frontend CDN + API), set `vite.config.ts` proxy ke API URL production dan pastikan CORS.
+Untuk hosting terpisah (frontend CDN + API), set proxy `vite.config.ts` ke API URL production dan pastikan CORS.
 
 ---
 
-## 7. Keputusan Teknis yang Dikunci
+## 9. Keputusan Teknis yang Dikunci
 
 | # | Keputusan | Alasan |
 |---|---|---|
 |1| **Frontend Vite + React + TS** | Sesuai rekomendasi PRD, cepat untuk MVP 1–2 hari, HMR baik |
 |2| **Backend Express + TS + Zod** | Sederhana, validasi terpusat, mudah di-deploy sebagai single Node service |
 |3| **DB SQLite (better-sqlite3)** | Zero infra untuk assessment; file-based, WAL, migration mudah. Mudah swap ke Postgres via DATABASE_URL |
-|4| **guestCount TIDAK_HADIR = 1–10 (default 1)** | Konsisten 1–10 di semua layer; tidak memakai 0 untuk menghindari cabang validasi. UX: tetap 1 sebagai “kontak” meski tidak hadir |
-|5| **Wishes load on viewport + fallback 2s** | Sesuai ARCH opsi “ketika section masuk viewport”; fallback timer memastikan tetap load jika observer tidak trigger |
-|6| **No optimistic wishes** | Hanya tampil setelah 201 agar tidak menampilkan data gagal simpan |
-|7| **Asset mapping terdokumentasi di eventConfig.ts** | background.jpg → cover, 1.png portrait hero, 5–10.png landscape gallery; pakai `object-position` per gambar + `alt` deskriptif |
+|4| **Animasi GSAP ScrollTrigger (bukan IO manual)** | Butuh orkestrasi stagger/tilt/scrub per grup + habits anti-blink pada transisi cover; satu sesi `gsap.context` mudah di-revert |
+|5| **Setup trigger saat klik (di balik cover)** | Me-hide hero selagi tertutup = tanpa blink; hero ikut entrance saat auto-scroll lewat; posisi trigger final setelah cover hilang |
+|6| **Trigger per kartu, bukan per section** | Kartu mempelai wanita & tiap wishes animasi saat masuk viewport, bukan sekaligus di awal section |
+|7| **guestCount TIDAK_HADIR = 1–10 (default 1)** | Konsisten 1–10 di semua layer; tidak memakai 0 untuk menghindari cabang validasi |
+|8| **Wishes load on viewport + fallback 2s, tanpa optimistic update** | Tetap load bila observer tak trigger; hanya tampil setelah 201 agar tak menampilkan data gagal simpan |
+|9| **Single chrome-bar + sentinel footer** | Tiga tombol fixed manual terbukti tabrakan di 320px; satu flex bar + docking kolom desktop + auto-hide di ujung = proporsional & tak menutup footer |
+|10| **Pemetaan aset di eventConfig.ts** | Cover `1.png`, countdown `7.png` + overlay hitam 45%, gallery `1–5.png`, footer `10.png`; `object-position` per gambar + `alt` deskriptif |
 
 ---
 
-## 8. Visual Direction
+## 10. Visual Direction (aktual)
 
-- Fonts: Cormorant Garamond (display) + DM Sans (body) via Google Fonts, `font-display:swap`.
-- Tokens: `--color-ink #1b1b1b`, `--color-paper #f3f0eb`, `--color-accent #b28a62`, spacing section `clamp(72px,12vw,160px)`, container `min(100%-32px,1120px)`.
-- Cover: full-bleed background.jpg + overlay gelap, CTA “Buka Undangan” sebagai focal point, entrance `fadeUp` 500–900ms `cubic-bezier(0.22,1,0.36,1)`.
-- Reveal: `opacity+translateY(20px)` via IntersectionObserver, hormati `prefers-reduced-motion`.
-- Gallery: 12-col grid desktop, 2-col mobile, lazy `loading="lazy"`, explicit `aspect-ratio`.
-
----
-
-## 9. Testing Strategy (manual + smoke)
-
-- Unit (validator, countdown formatter, error mapper) — zod schema tested via API negative case.
-- Component: loading/error/success, countdown past, reduced-motion.
-- Integration: POST RSVP invalid tidak tersimpan, GET/POST wishes persistency diverifikasi via curl + refresh.
-- Smoke/E2E: buka cover → scroll → submit RSVP → submit wishes → refresh → wishes tetap ada.
-- Responsive: diuji 320, 375, 768, 1024, 1440 — tidak boleh overflow horizontal.
+- Font via Google Fonts (`font-display: swap`): **Marcellus** (`--font-display`, nama & heading), **Cormorant Upright** (`--font-body`), **Great Vibes** (`--font-script`, aksen "and"), **Jost** (`--font-ui`, tombol/label).
+- Token (`styles/global.css`): `--color-ink #2C3F4E`, `--color-paper #D5DADE`, `--color-muted #737373`, `--color-dark #323030`; radius 16px; kolom undangan `max-width: 500px` (mobile) / `clamp(340px,25vw,480px)` (desktop).
+- Cover: full-bleed `1.png` + overlay gelap + gradient, CTA ghost "Buka Undangan" sebagai focal point, entrance bg zoom + teks blur-rise stagger.
+- Reveal: teks blur+rise, media zoom, kartu tilt; easing `power3.out`, durasi 0.85–1.1s.
+- Countdown: `7.png` grayscale + wrap hitam transparan `rgba(0,0,0,.45)` agar angka putih terbaca.
+- Gallery: carousel autoplay 3.5s (jeda saat hover/sentuh/tab hidden) + swipe + dots + thumbnail, fade tiap ganti slide.
 
 ---
 
-## 10. Disclosure AI Tools
+## 11. Testing Strategy (manual + smoke)
 
-Implementasi dibantu oleh **Muse Spark (opencode/muse-spark-1.2)** sebagai coding agent untuk scaffolding, komponen, API, dan dokumentasi. Seluruh output ditinjau, di-build, dan diuji manual (curl, `npm run build`, production serve) sebelum diserahkan. Asset pack hanya dipakai untuk assessment dan tidak dipublikasikan ulang.
+- Unit: skema zod (kasus invalid via API), `getCountdown` (termasuk lewat waktu).
+- Component: state loading/error/success form, cegah double-submit, kontrol musik play/pause.
+- Integration: POST RSVP invalid tidak tersimpan (400 + `fields`), GET/POST wishes persist (curl + refresh).
+- Smoke/E2E: buka cover (scroll mulus, tanpa blink) → scroll tiap section (animasi per item) → submit RSVP → submit wishes → refresh → wishes tetap ada.
+- Responsive/manual: 320, 375, 768, 1024, 1440 — tanpa overflow horizontal, tombol bar tidak tabrakan, footer tidak tertutup.
+- Verifikasi rutin: `npm run build` (tsc + vite) dan `curl /api/health`.
 
 ---
 
-## 11. Lisensi Asset
+## 12. Disclosure AI Tools
 
-Asset `assets/` hanya untuk assessment/hometask seleksi Invitato dan tidak untuk publikasi ulang di luar konteks tersebut.
+Implementasi dibantu oleh **Muse Spark** (coding agent, model `muse-spark-1.3`) untuk scaffolding, komponen, API, animasi GSAP, refactor hooks/helpers, dan dokumentasi. Seluruh output ditinjau, di-build (`npm run build`), dan diuji (smoke dev server: client 200 + `/api/health` OK, alur cover → RSVP → wishes manual) sebelum diserahkan. Asset pack hanya dipakai untuk assessment dan tidak dipublikasikan ulang.
+
+---
+
+## 13. Lisensi Asset
+
+Asset `assets/` dan `public/assets/` hanya untuk assessment/hometask seleksi Invitato dan tidak untuk publikasi ulang di luar konteks tersebut.
