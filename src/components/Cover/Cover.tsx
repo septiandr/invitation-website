@@ -19,7 +19,7 @@ export function Cover({ isOpened, onOpen }: Props) {
       }}
     >
       <img
-        src="/assets/background.jpg"
+        src="/assets/1.png"
         alt=""
         aria-hidden
         fetchPriority="high"
