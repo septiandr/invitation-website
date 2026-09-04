@@ -27,14 +27,28 @@ export default function App() {
 
   return (
     <div>
-      {!isOpened && <Cover isOpened={isOpened} onOpen={() => setIsOpened(true)} />}
+      <div
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 40,
+          transform: isOpened ? "translateY(-100%)" : "translateY(0)",
+          opacity: isOpened ? 0 : 1,
+          transition: "transform 900ms cubic-bezier(0.22,1,0.36,1), opacity 700ms ease",
+          pointerEvents: isOpened ? "none" : "auto",
+        }}
+        aria-hidden={isOpened}
+      >
+        <Cover isOpened={isOpened} onOpen={() => setIsOpened(true)} />
+      </div>
 
       <div
         aria-hidden={!isOpened}
         style={{
-          display: isOpened ? "block" : "none",
           opacity: isOpened ? 1 : 0,
-          transition: "opacity 600ms ease",
+          transform: isOpened ? "translateY(0) scale(1)" : "translateY(12px) scale(0.98)",
+          transition: "opacity 900ms cubic-bezier(0.22,1,0.36,1) 200ms, transform 900ms cubic-bezier(0.22,1,0.36,1) 200ms",
+          pointerEvents: isOpened ? "auto" : "none",
         }}
       >
         {/* sticky nav minimal */}

@@ -46,7 +46,7 @@ export function Countdown() {
             <p style={{ margin: 0, fontFamily: "var(--font-body)", fontWeight: 600 }}>Acara telah berlangsung — terima kasih atas doa dan restunya.</p>
           </div>
         ) : (
-          <div style={{ marginTop: 28, display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
+          <div className={`stagger ${visible ? "in" : ""}`} style={{ marginTop: 28, display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
             <Box value={days} label="Hari" />
             <Box value={hours} label="Jam" />
             <Box value={minutes} label="Menit" />

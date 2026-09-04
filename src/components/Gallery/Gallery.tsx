@@ -17,6 +17,7 @@ export function Gallery() {
         </div>
 
         <div
+          className={`stagger ${visible ? "in" : ""}`}
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(12, 1fr)",
@@ -24,7 +25,7 @@ export function Gallery() {
           }}
         >
           {/* feature - invitato radius 16 */}
-          <figure style={{ margin: 0, gridColumn: "span 12", aspectRatio: "16 / 9", overflow: "hidden", borderRadius: 16, border: "1px solid var(--color-line)" }}>
+          <figure className="img-hover" style={{ margin: 0, gridColumn: "span 12", aspectRatio: "16 / 9", overflow: "hidden", borderRadius: 16, border: "1px solid var(--color-line)" }}>
             <img
               src={eventConfig.gallery[4].src}
               alt={eventConfig.gallery[4].alt}
@@ -35,7 +36,7 @@ export function Gallery() {
 
           {/* 2-col portrait */}
           {eventConfig.gallery.slice(0, 2).map((g) => (
-            <figure
+            <figure className="img-hover"
               key={g.src}
               style={{
                 margin: 0,
@@ -53,7 +54,7 @@ export function Gallery() {
 
           {/* landscape strip - 3 */}
           {eventConfig.gallery.slice(5, 8).map((g) => (
-            <figure
+            <figure className="img-hover"
               key={g.src}
               style={{
                 margin: 0,
@@ -69,10 +70,10 @@ export function Gallery() {
           ))}
 
           {/* tall + landscape */}
-          <figure style={{ margin: 0, gridColumn: "span 5", aspectRatio: "3 / 4", overflow: "hidden", borderRadius: 16, border: "1px solid var(--color-line)" }}>
+          <figure className="img-hover" style={{ margin: 0, gridColumn: "span 5", aspectRatio: "3 / 4", overflow: "hidden", borderRadius: 16, border: "1px solid var(--color-line)" }}>
             <img src={eventConfig.gallery[3].src} alt={eventConfig.gallery[3].alt} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           </figure>
-          <figure style={{ margin: 0, gridColumn: "span 7", aspectRatio: "4 / 3", overflow: "hidden", borderRadius: 16, border: "1px solid var(--color-line)" }}>
+          <figure className="img-hover" style={{ margin: 0, gridColumn: "span 7", aspectRatio: "4 / 3", overflow: "hidden", borderRadius: 16, border: "1px solid var(--color-line)" }}>
             <img src={eventConfig.gallery[8].src} alt={eventConfig.gallery[8].alt} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           </figure>
         </div>

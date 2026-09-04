@@ -10,7 +10,7 @@ export function Hero() {
       className={`section-pad ${visible ? "reveal in" : "reveal"}`}
       style={{ background: "var(--color-paper-alt)" }}
     >
-      <div className="container" style={{ textAlign: "center" }}>
+      <div className={`container stagger ${visible ? "in" : ""}`} style={{ textAlign: "center" }}>
         <p className="kicker" style={{ color: "var(--color-muted)" }}>We are getting married</p>
         <h2
           className="display"
@@ -33,6 +33,7 @@ export function Hero() {
           }}
         >
           <figure
+            className="img-hover"
             style={{
               margin: 0,
               width: "min(100%, 560px)",

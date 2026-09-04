@@ -14,6 +14,7 @@ export function EventDetails() {
         </div>
 
         <div
+          className={`stagger ${visible ? "in" : ""}`}
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
@@ -28,7 +29,10 @@ export function EventDetails() {
                 border: "1px solid var(--color-line)",
                 padding: 28,
                 borderRadius: 16,
+                transition: "transform 300ms cubic-bezier(0.22,1,0.36,1), box-shadow 300ms ease",
               }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.transform = "translateY(-4px)"; (e.currentTarget as HTMLDivElement).style.boxShadow = "0 10px 28px rgba(44,63,78,0.12)"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)"; (e.currentTarget as HTMLDivElement).style.boxShadow = "none"; }}
             >
               <p className="kicker" style={{ color: "var(--color-muted)" }}>
                 {ev.date}

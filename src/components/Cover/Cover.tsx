@@ -10,11 +10,10 @@ export function Cover({ isOpened, onOpen }: Props) {
     <section
       aria-label="Cover undangan"
       style={{
-        position: isOpened ? "absolute" : "relative",
-        inset: isOpened ? undefined : 0,
+        position: "relative",
         height: "100svh",
         minHeight: "100svh",
-        display: isOpened ? "none" : "flex",
+        display: "flex",
         overflow: "hidden",
         background: "#2C3F4E",
       }}
@@ -31,6 +30,7 @@ export function Cover({ isOpened, onOpen }: Props) {
           height: "100%",
           objectFit: "cover",
           objectPosition: "50% 30%",
+          animation: "kenburns 1.8s cubic-bezier(0.22,1,0.36,1) forwards",
         }}
       />
       <div
@@ -162,6 +162,8 @@ export function Cover({ isOpened, onOpen }: Props) {
             fontStyle: "italic",
             color: "rgba(255,255,255,0.92)",
             letterSpacing: "0.02em",
+            opacity: 0,
+            animation: "fadeUp 700ms cubic-bezier(0.22,1,0.36,1) 500ms forwards",
           }}
         >
           Kepada Yth. {eventConfig.greetingName}
@@ -173,6 +175,8 @@ export function Cover({ isOpened, onOpen }: Props) {
             fontSize: 10,
             letterSpacing: "0.06em",
             color: "rgba(255,255,255,0.65)",
+            opacity: 0,
+            animation: "fadeUp 700ms cubic-bezier(0.22,1,0.36,1) 540ms forwards",
           }}
         >
           * Mohon maaf apabila ada kesalahan penulisan nama/gelar
@@ -189,7 +193,7 @@ export function Cover({ isOpened, onOpen }: Props) {
             letterSpacing: "0.18em",
             padding: "13px 28px",
             opacity: 0,
-            animation: "fadeUp 700ms cubic-bezier(0.22,1,0.36,1) 560ms forwards",
+            animation: "fadeUp 700ms cubic-bezier(0.22,1,0.36,1) 560ms forwards, floatSubtle 3s ease-in-out 1.5s infinite",
           }}
           aria-label="Buka undangan"
         >
